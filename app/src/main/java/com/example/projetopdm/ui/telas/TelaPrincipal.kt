@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -112,7 +113,7 @@ fun TelaPrincipal(modifier: Modifier = Modifier, onLogoffClick: () -> Unit) {
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Button(onClick = { onLogoffClick() }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+        Button(colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00186F), contentColor = Color.White), onClick = { onLogoffClick() }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Text("Sair")
         }
     }

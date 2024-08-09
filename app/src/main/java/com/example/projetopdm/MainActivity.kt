@@ -25,6 +25,7 @@ import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -52,7 +53,8 @@ class MainActivity : ComponentActivity() {
                             ),
                             title = {
                                 Text(
-                                    text = "Seus Filmes e Séries aqui!",
+                                    text = "MyCine",
+                                    color = Color(0xFFF1CA00),
                                     modifier = Modifier
                                         .fillMaxWidth(),
                                     textAlign = TextAlign.Center
@@ -117,6 +119,7 @@ fun BottomNavigationBar() {
                 verticalArrangement = Arrangement.Center
             ) {
                 Icon(
+                    tint = Color(0xFF00186F),
                     imageVector = Icons.Default.Home,
                     contentDescription = "Home"
                 )
@@ -127,6 +130,7 @@ fun BottomNavigationBar() {
                 verticalArrangement = Arrangement.Center
             ) {
                 Icon(
+                    tint = Color(0xFF00186F),
                     imageVector = Icons.Default.Favorite,
                     contentDescription = "Favoritos"
                 )
@@ -137,6 +141,7 @@ fun BottomNavigationBar() {
                 verticalArrangement = Arrangement.Center
             ) {
                 Icon(
+                    tint = Color(0xFF00186F),
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Perfil"
                 )
