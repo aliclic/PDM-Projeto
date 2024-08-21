@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,12 +35,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.projetopdm.ui.telas.TelaCadastro
 import com.example.projetopdm.ui.telas.TelaLogin
+import com.example.projetopdm.ui.telas.TelaPerfil
 import com.example.projetopdm.ui.telas.TelaPrincipal
 import com.example.projetopdm.ui.theme.ProjetoPDMTheme
 
@@ -80,7 +83,7 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
                         if (currentRoute != "login" && currentRoute != "signup") {
-                            BottomNavigationBar()
+                            BottomNavigationBar(navController)
                         }
                     },
                     modifier = Modifier.fillMaxSize()
@@ -115,6 +118,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        composable("perfil") {
+                            TelaPerfil(
+                                onBackClick = {
+                                    navController.navigate("login") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -122,9 +134,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigationBar(navController: NavController) {
     BottomAppBar(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.primary
@@ -142,7 +153,9 @@ fun BottomNavigationBar() {
                     tint = Color(0xFF00186F),
                     imageVector = Icons.Default.Home,
                     contentDescription = "Home",
-                    modifier = Modifier.size(32.dp) // Ajusta o tamanho do ícone
+                    modifier = Modifier.size(32.dp).clickable {
+                        navController.navigate("principal")
+                    }
                 )
                 Text("Home")
             }
@@ -154,7 +167,9 @@ fun BottomNavigationBar() {
                     tint = Color(0xFF00186F),
                     imageVector = Icons.Default.Favorite,
                     contentDescription = "Favoritos",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp).clickable {
+                        // Navegação para uma tela de Favoritos pode ser adicionada aqui
+                    }
                 )
                 Text("Favoritos")
             }
@@ -166,7 +181,9 @@ fun BottomNavigationBar() {
                     tint = Color(0xFF00186F),
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Perfil",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp).clickable {
+                        navController.navigate("perfil")
+                    }
                 )
                 Text("Perfil")
             }

@@ -145,12 +145,5 @@ fun TelaPrincipal(modifier: Modifier = Modifier, onLogoffClick: () -> Unit) {
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Button(
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00186F), contentColor = Color.White),
-            onClick = { onLogoffClick() },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text("Sair")
-        }
     }
 }
