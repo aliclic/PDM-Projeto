@@ -31,12 +31,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
+import com.example.projetopdm.model.dados.Usuario
+import com.example.projetopdm.model.dados.UsuarioDAO
+
 @Composable
 fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSignInClick: () -> Unit) {
     var nome by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var mensagemErro by remember { mutableStateOf<String?>(null) }
+    var mensagemSucesso by remember { mutableStateOf<String?>(null) }
+
+    val usuarioDAO = UsuarioDAO()
 
     Box(
         contentAlignment = Alignment.Center,
@@ -83,12 +89,24 @@ fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSig
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-                    if (nome.isNotBlank() && email.isNotBlank() && senha.isNotBlank()) {
-                        onSignUpClick()
-                    } else {
-                        mensagemErro = "Por favor, preencha todos os campos!"
-                    }
-                },
+                        if (nome.isNotBlank() && email.isNotBlank() && senha.isNotBlank()) {
+                            val usuario = Usuario(
+                                nome = nome,
+                                email = email,
+                                senha = senha
+                            )
+                            usuarioDAO.adicionar(usuario) { usuarioAdicionado: Usuario ->
+                                if (usuarioAdicionado.id.isNotEmpty()) {
+                                    mensagemSucesso = "Usuário cadastrado com sucesso!"
+                                    onSignUpClick()
+                                } else {
+                                    mensagemErro = "Erro ao cadastrar usuário!"
+                                }
+                            }
+                        } else {
+                            mensagemErro = "Por favor, preencha todos os campos!"
+                        }
+                    },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00186F),
                     contentColor = Color.White),
@@ -107,6 +125,19 @@ fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSig
                     mensagemErro = null
                 }
             }
+
+            mensagemSucesso?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                LaunchedEffect(Unit) {
+                    delay(3000)
+                    mensagemSucesso = null
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = "Entrar",

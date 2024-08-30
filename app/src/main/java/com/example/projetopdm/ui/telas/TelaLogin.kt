@@ -30,12 +30,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import com.example.projetopdm.model.dados.Usuario
+import com.example.projetopdm.model.dados.UsuarioDAO
 
 @Composable
-fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: () -> Unit, onSignUpClick: () -> Unit) {
+fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: (String) -> Unit, onSignUpClick: () -> Unit) {
     var login by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var mensagemErro by remember { mutableStateOf<String?>(null) }
+
+    val usuarioDAO = UsuarioDAO()
 
     Box(
         contentAlignment = Alignment.Center,
@@ -76,10 +80,16 @@ fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: () -> Unit, onSignUp
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-                    if (login == senha) {
-                        onSignInClick()
+                    if (login.isNotBlank() && senha.isNotBlank()) {
+                        usuarioDAO.buscarPorNome(login) { usuarioEncontrado ->
+                            if (usuarioEncontrado != null && usuarioEncontrado.senha == senha) {
+                                onSignInClick(usuarioEncontrado.id) // Passa o userId
+                            } else {
+                                mensagemErro = "Login ou senha inválidos!"
+                            }
+                        }
                     } else {
-                        mensagemErro = "Login ou senha inválidos!"
+                        mensagemErro = "Por favor, preencha todos os campos!"
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00186F), contentColor = Color.White),

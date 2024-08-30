@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,6 +56,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             ProjetoPDMTheme {
                 val navController = rememberNavController()
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = currentBackStackEntry?.destination?.route
+                val userId = currentBackStackEntry?.arguments?.getString("userId") ?: ""
 
                 Scaffold(
                     topBar = {
@@ -81,9 +85,8 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     bottomBar = {
-                        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
                         if (currentRoute != "login" && currentRoute != "signup") {
-                            BottomNavigationBar(navController)
+                            BottomNavigationBar(navController, userId)
                         }
                     },
                     modifier = Modifier.fillMaxSize()
@@ -92,8 +95,8 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             TelaLogin(
                                 modifier = Modifier.padding(innerPadding),
-                                onSignInClick = {
-                                    navController.navigate("principal")
+                                onSignInClick = { id ->
+                                    navController.navigate("principal/$id")
                                 },
                                 onSignUpClick = {
                                     navController.navigate("signup")
@@ -110,19 +113,24 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable("principal") {
+                        composable("principal/{userId}") { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getString("userId") ?: ""
                             TelaPrincipal(
                                 modifier = Modifier.padding(innerPadding),
+                                userId = userId,
                                 onLogoffClick = {
-                                    navController.navigate("login")
+                                    navController.navigate("perfil/$userId")
                                 }
                             )
                         }
-                        composable("perfil") {
+                        composable("perfil/{userId}") { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getString("userId") ?: ""
                             TelaPerfil(
+                                userId = userId,
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = {
                                     navController.navigate("login") {
-                                        popUpTo("login") { inclusive = true }
+                                        popUpTo("principal") { inclusive = true }
                                     }
                                 }
                             )
@@ -135,7 +143,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(navController: NavController, userId: String) {
     BottomAppBar(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.primary
@@ -154,7 +162,7 @@ fun BottomNavigationBar(navController: NavController) {
                     imageVector = Icons.Default.Home,
                     contentDescription = "Home",
                     modifier = Modifier.size(32.dp).clickable {
-                        navController.navigate("principal")
+                        navController.navigate("principal/$userId")
                     }
                 )
                 Text("Home")
@@ -182,7 +190,7 @@ fun BottomNavigationBar(navController: NavController) {
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Perfil",
                     modifier = Modifier.size(32.dp).clickable {
-                        navController.navigate("perfil")
+                        navController.navigate("perfil/$userId")
                     }
                 )
                 Text("Perfil")
@@ -190,6 +198,7 @@ fun BottomNavigationBar(navController: NavController) {
         }
     }
 }
+
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
@@ -203,3 +212,4 @@ fun GreetingPreview() {
         TelaLogin(onSignInClick = {}, onSignUpClick = {})
     }
 }
+

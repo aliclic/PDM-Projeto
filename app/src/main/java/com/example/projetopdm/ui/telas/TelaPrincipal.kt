@@ -111,7 +111,7 @@ fun SerieItem(imageResource: Int) {
 
 
 @Composable
-fun TelaPrincipal(modifier: Modifier = Modifier, onLogoffClick: () -> Unit) {
+fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: () -> Unit) {
     Column(
         modifier = modifier
             .fillMaxSize()
