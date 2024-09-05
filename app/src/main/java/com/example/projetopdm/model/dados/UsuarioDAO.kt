@@ -97,22 +97,23 @@ class UsuarioDAO{
             }
     }
 
-    fun atualizarSenha(userId: String, novoSenha: String, onComplete: (Boolean) -> Unit) {
+    fun atualizarSenha(userId: String, novaSenha: String, onComplete: (Boolean) -> Unit) {
         val userDocumentRef = collectionRef.document(userId)
 
-        // Atualiza o campo 'nome' no documento do usuário
-        userDocumentRef.update("email", novoSenha)
+        // Atualiza o campo 'senha' no documento do usuário
+        userDocumentRef.update("senha", novaSenha)
             .addOnSuccessListener {
                 // Chama o callback com 'true' em caso de sucesso
                 onComplete(true)
             }
             .addOnFailureListener { exception ->
                 // Log de erro em caso de falha
-                println("Erro ao atualizar o email: ${exception.message}")
+                println("Erro ao atualizar a senha: ${exception.message}")
                 // Chama o callback com 'false' em caso de falha
                 onComplete(false)
             }
     }
+
 
     fun deletarUsuario(userId: String, callback: (Boolean) -> Unit) {
         val userDocumentRef = collectionRef.document(userId)

@@ -1,5 +1,6 @@
 package com.example.projetopdm.ui.telas
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,43 +41,64 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
+import com.example.projetopdm.AppConstants
 import com.example.projetopdm.R
+import com.example.projetopdm.network.Movie
+import com.example.projetopdm.network.RetrofitInstance
+import com.example.projetopdm.network.Serie
+import com.example.projetopdm.network.TmdbMovieResponse
+import com.example.projetopdm.network.TmdbSeriesResponse
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun FilmesCarousel() {
+    var movies by remember { mutableStateOf(listOf<Movie>()) }
+
+    LaunchedEffect(Unit) {
+        RetrofitInstance.api.getPopularMovies(AppConstants.TMDB_API_KEY).enqueue(object :
+            Callback<TmdbMovieResponse> {
+            override fun onResponse(
+                call: Call<TmdbMovieResponse>,
+                response: Response<TmdbMovieResponse>
+            ) {
+                response.body()?.let {
+                    movies = it.results
+                }
+            }
+
+            override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
+                Log.e("API_ERROR", "Error fetching movies", t)
+            }
+        })
+    }
+
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(10) { index ->
-            FilmeItem(imageResource = R.drawable.filme)
+        items(movies) { movie ->
+            MovieItem(movie)
         }
     }
 }
 
 @Composable
-fun SeriesCarousel() {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(10) { index ->
-            SerieItem(imageResource = R.drawable.serie)
-        }
-    }
-}
-
-@Composable
-fun FilmeItem(imageResource: Int) {
+fun MovieItem(movie: Movie) {
     Box(
         modifier = Modifier
             .size(120.dp, 180.dp)
+            .background(Color.Black, shape = RoundedCornerShape(8.dp))
     ) {
+        val posterUrl = AppConstants.TMDB_IMAGE_BASE_URL_ORIGINAL + movie.poster_path
         Image(
-            painter = painterResource(id = imageResource),
-            contentDescription = "Filme",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            painter = rememberAsyncImagePainter(posterUrl),
+            contentDescription = movie.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
         )
         Icon(
             imageVector = Icons.Filled.Favorite,
@@ -86,16 +113,49 @@ fun FilmeItem(imageResource: Int) {
 }
 
 @Composable
-fun SerieItem(imageResource: Int) {
+fun SeriesCarousel() {
+    var series by remember { mutableStateOf(listOf<Serie>()) }
+
+    LaunchedEffect(Unit) {
+        RetrofitInstance.api.getPopularSeries(AppConstants.TMDB_API_KEY).enqueue(object : Callback<TmdbSeriesResponse> {
+            override fun onResponse(
+                call: Call<TmdbSeriesResponse>,
+                response: Response<TmdbSeriesResponse>
+            ) {
+                response.body()?.let {
+                    series = it.results
+                }
+            }
+
+            override fun onFailure(call: Call<TmdbSeriesResponse>, t: Throwable) {
+                Log.e("API_ERROR", "Error fetching series", t)
+            }
+        })
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(series) { serie ->
+            SerieItem(serie)
+        }
+    }
+}
+
+@Composable
+fun SerieItem(serie: Serie) {
     Box(
         modifier = Modifier
             .size(120.dp, 180.dp)
+            .background(Color.Black, shape = RoundedCornerShape(8.dp))
     ) {
+        val posterUrl = AppConstants.TMDB_IMAGE_BASE_URL_ORIGINAL + serie.poster_path
         Image(
-            painter = painterResource(id = imageResource),
-            contentDescription = "Série",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            painter = rememberAsyncImagePainter(posterUrl),
+            contentDescription = serie.name,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
         )
         Icon(
             imageVector = Icons.Filled.Favorite,
@@ -109,7 +169,6 @@ fun SerieItem(imageResource: Int) {
     }
 }
 
-
 @Composable
 fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: () -> Unit) {
     Column(
@@ -118,7 +177,7 @@ fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: 
             .verticalScroll(rememberScrollState())
     ) {
         Text(
-            text = "Filmes",
+            text = "Filmes Populares",
             style = androidx.compose.ui.text.TextStyle(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold
@@ -132,7 +191,7 @@ fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Series",
+            text = "Series Populares",
             style = androidx.compose.ui.text.TextStyle(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold
@@ -144,6 +203,5 @@ fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: 
         SeriesCarousel()
 
         Spacer(modifier = Modifier.weight(1f))
-
     }
 }
