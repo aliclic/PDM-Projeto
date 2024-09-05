@@ -114,6 +114,24 @@ class UsuarioDAO{
             }
     }
 
+    fun atualizarUsuario(userId: String, novosDados: Map<String, Any>, onComplete: (Boolean) -> Unit) {
+        val userDocumentRef = collectionRef.document(userId)
+
+        // Atualiza múltiplos campos no documento do usuário
+        userDocumentRef.update(novosDados)
+            .addOnSuccessListener {
+                // Chama o callback com 'true' em caso de sucesso
+                onComplete(true)
+            }
+            .addOnFailureListener { exception ->
+                // Log de erro em caso de falha
+                println("Erro ao atualizar o usuário: ${exception.message}")
+                // Chama o callback com 'false' em caso de falha
+                onComplete(false)
+            }
+    }
+
+
 
     fun deletarUsuario(userId: String, callback: (Boolean) -> Unit) {
         val userDocumentRef = collectionRef.document(userId)
