@@ -55,6 +55,174 @@ import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
+fun FilmesPorVirCarousel() {
+    var upcomingMovies by remember { mutableStateOf(listOf<Movie>()) }
+
+    LaunchedEffect(Unit) {
+        RetrofitInstance.api.getUpcomingMovies(AppConstants.TMDB_API_KEY).enqueue(object : Callback<TmdbMovieResponse> {
+            override fun onResponse(call: Call<TmdbMovieResponse>, response: Response<TmdbMovieResponse>) {
+                response.body()?.let {
+                    upcomingMovies = it.results
+                }
+            }
+
+            override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
+                Log.e("API_ERROR", "Error fetching upcoming movies", t)
+            }
+        })
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(upcomingMovies) { movie ->
+            MovieItem(movie)
+        }
+    }
+}
+
+@Composable
+fun SeriesNoArHojeCarousel() {
+    var upcomingSeries by remember { mutableStateOf(listOf<Serie>()) }
+
+    LaunchedEffect(Unit) {
+        RetrofitInstance.api.getUpcomingSeries(AppConstants.TMDB_API_KEY).enqueue(object : Callback<TmdbSeriesResponse> {
+            override fun onResponse(call: Call<TmdbSeriesResponse>, response: Response<TmdbSeriesResponse>) {
+                response.body()?.let {
+                    upcomingSeries = it.results
+                }
+            }
+
+            override fun onFailure(call: Call<TmdbSeriesResponse>, t: Throwable) {
+                Log.e("API_ERROR", "Error fetching upcoming series", t)
+            }
+        })
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(upcomingSeries) { serie ->
+            SerieItem(serie)
+        }
+    }
+}
+
+@Composable
+fun FilmesBemAvaliadosCarousel() {
+    var topRatedMovies by remember { mutableStateOf(listOf<Movie>()) }
+
+    LaunchedEffect(Unit) {
+        RetrofitInstance.api.getTopRatedMovies(AppConstants.TMDB_API_KEY).enqueue(object : Callback<TmdbMovieResponse> {
+            override fun onResponse(call: Call<TmdbMovieResponse>, response: Response<TmdbMovieResponse>) {
+                response.body()?.let {
+                    topRatedMovies = it.results
+                }
+            }
+
+            override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
+                Log.e("API_ERROR", "Error fetching top rated movies", t)
+            }
+        })
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(topRatedMovies) { movie ->
+            MovieItem(movie)
+        }
+    }
+}
+
+@Composable
+fun SeriesBemAvaliadasCarousel() {
+    var topRatedSeries by remember { mutableStateOf(listOf<Serie>()) }
+
+    LaunchedEffect(Unit) {
+        RetrofitInstance.api.getTopRatedSeries(AppConstants.TMDB_API_KEY).enqueue(object : Callback<TmdbSeriesResponse> {
+            override fun onResponse(call: Call<TmdbSeriesResponse>, response: Response<TmdbSeriesResponse>) {
+                response.body()?.let {
+                    topRatedSeries = it.results
+                }
+            }
+
+            override fun onFailure(call: Call<TmdbSeriesResponse>, t: Throwable) {
+                Log.e("API_ERROR", "Error fetching top rated series", t)
+            }
+        })
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(topRatedSeries) { serie ->
+            SerieItem(serie)
+        }
+    }
+}
+
+@Composable
+fun FilmesEmCartazCarousel() {
+    var movies by remember { mutableStateOf(listOf<Movie>()) }
+
+    LaunchedEffect(Unit) {
+        RetrofitInstance.api.getNowPlayingMovies(AppConstants.TMDB_API_KEY).enqueue(object : Callback<TmdbMovieResponse> {
+            override fun onResponse(call: Call<TmdbMovieResponse>, response: Response<TmdbMovieResponse>) {
+                response.body()?.let {
+                    movies = it.results
+                }
+            }
+
+            override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
+                Log.e("API_ERROR", "Error fetching movies in theaters", t)
+            }
+        })
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(movies) { movie ->
+            MovieItem(movie)
+        }
+    }
+}
+
+@Composable
+fun SeriesEmExibicaoCarousel() {
+    var series by remember { mutableStateOf(listOf<Serie>()) }
+
+    LaunchedEffect(Unit) {
+        RetrofitInstance.api.getOnTheAirSeries(AppConstants.TMDB_API_KEY).enqueue(object : Callback<TmdbSeriesResponse> {
+            override fun onResponse(call: Call<TmdbSeriesResponse>, response: Response<TmdbSeriesResponse>) {
+                response.body()?.let {
+                    series = it.results
+                }
+            }
+
+            override fun onFailure(call: Call<TmdbSeriesResponse>, t: Throwable) {
+                Log.e("API_ERROR", "Error fetching series on the air", t)
+            }
+        })
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(series) { serie ->
+            SerieItem(serie)
+        }
+    }
+}
+
+@Composable
 fun FilmesCarousel() {
     var movies by remember { mutableStateOf(listOf<Movie>()) }
 
@@ -201,6 +369,92 @@ fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: 
                 .align(Alignment.Start)
         )
         SeriesCarousel()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Filmes Bem Avaliados",
+            style = androidx.compose.ui.text.TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            modifier = Modifier
+                .padding(start = 16.dp, top = 16.dp, bottom = 5.dp)
+                .align(Alignment.Start)
+        )
+        FilmesBemAvaliadosCarousel()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Séries Bem Avaliadas",
+            style = androidx.compose.ui.text.TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            modifier = Modifier
+                .padding(start = 16.dp, top = 16.dp, bottom = 5.dp)
+                .align(Alignment.Start)
+        )
+        SeriesBemAvaliadasCarousel()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Filmes Em Cartaz",
+            style = androidx.compose.ui.text.TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            modifier = Modifier
+                .padding(start = 16.dp, top = 16.dp, bottom = 5.dp)
+                .align(Alignment.Start)
+        )
+        FilmesEmCartazCarousel()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Series Em Exibição",
+            style = androidx.compose.ui.text.TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            modifier = Modifier
+                .padding(start = 16.dp, top = 16.dp, bottom = 5.dp)
+                .align(Alignment.Start)
+        )
+        SeriesEmExibicaoCarousel()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Filmes Por Vir",
+            style = androidx.compose.ui.text.TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            modifier = Modifier
+                .padding(start = 16.dp, top = 16.dp, bottom = 5.dp)
+                .align(Alignment.Start)
+        )
+        FilmesPorVirCarousel()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Séries No Ar Hoje",
+            style = androidx.compose.ui.text.TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            modifier = Modifier
+                .padding(start = 16.dp, top = 16.dp, bottom = 5.dp)
+                .align(Alignment.Start)
+        )
+        SeriesNoArHojeCarousel()
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Spacer(modifier = Modifier.weight(1f))
     }
