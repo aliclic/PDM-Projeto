@@ -9,15 +9,13 @@ interface TmdbService {
     @GET("movie/popular")
     fun getPopularMovies(
         @Query("api_key") apiKey: String,
-        @Query("language") language: String = "en-US",
-        @Query("page") page: Int = 1
+        @Query("page") page: Int
     ): Call<TmdbMovieResponse>
 
     @GET("tv/popular")
     fun getPopularSeries(
         @Query("api_key") apiKey: String,
-        @Query("language") language: String = "en-US",
-        @Query("page") page: Int = 1
+        @Query("page") page: Int
     ): Call<TmdbSeriesResponse>
 
     @GET("movie/top_rated")

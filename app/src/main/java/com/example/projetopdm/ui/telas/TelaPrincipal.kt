@@ -225,22 +225,12 @@ fun SeriesEmExibicaoCarousel() {
 @Composable
 fun FilmesCarousel() {
     var movies by remember { mutableStateOf(listOf<Movie>()) }
+    var page by remember { mutableStateOf(1) }  // Variável para rastrear a página atual
+    var isLoading by remember { mutableStateOf(false) }  // Variável para evitar múltiplas chamadas
 
     LaunchedEffect(Unit) {
-        RetrofitInstance.api.getPopularMovies(AppConstants.TMDB_API_KEY).enqueue(object :
-            Callback<TmdbMovieResponse> {
-            override fun onResponse(
-                call: Call<TmdbMovieResponse>,
-                response: Response<TmdbMovieResponse>
-            ) {
-                response.body()?.let {
-                    movies = it.results
-                }
-            }
-
-            override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
-                Log.e("API_ERROR", "Error fetching movies", t)
-            }
+        loadMovies(page, onMoviesLoaded = {
+            movies = it
         })
     }
 
@@ -251,7 +241,41 @@ fun FilmesCarousel() {
         items(movies) { movie ->
             MovieItem(movie)
         }
+
+        // Detecta quando chega ao final da lista e carrega mais
+        item {
+            LaunchedEffect(movies.size) {
+                if (!isLoading) {
+                    isLoading = true
+                    page++
+                    loadMovies(page) { newMovies ->
+                        movies = movies + newMovies
+                        isLoading = false
+                    }
+                }
+            }
+        }
     }
+}
+
+// Função para carregar filmes
+private fun loadMovies(page: Int, onMoviesLoaded: (List<Movie>) -> Unit) {
+    RetrofitInstance.api.getPopularMovies(AppConstants.TMDB_API_KEY, page).enqueue(object :
+        Callback<TmdbMovieResponse> {
+        override fun onResponse(
+            call: Call<TmdbMovieResponse>,
+            response: Response<TmdbMovieResponse>
+        ) {
+            response.body()?.let {
+                onMoviesLoaded(it.results)
+            }
+        }
+
+        override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
+            Log.e("API_ERROR", "Error fetching movies", t)
+            onMoviesLoaded(emptyList())  // Retorna uma lista vazia se falhar
+        }
+    })
 }
 
 @Composable
@@ -283,21 +307,12 @@ fun MovieItem(movie: Movie) {
 @Composable
 fun SeriesCarousel() {
     var series by remember { mutableStateOf(listOf<Serie>()) }
+    var page by remember { mutableStateOf(1) }  // Variável para rastrear a página atual
+    var isLoading by remember { mutableStateOf(false) }  // Variável para evitar múltiplas chamadas
 
     LaunchedEffect(Unit) {
-        RetrofitInstance.api.getPopularSeries(AppConstants.TMDB_API_KEY).enqueue(object : Callback<TmdbSeriesResponse> {
-            override fun onResponse(
-                call: Call<TmdbSeriesResponse>,
-                response: Response<TmdbSeriesResponse>
-            ) {
-                response.body()?.let {
-                    series = it.results
-                }
-            }
-
-            override fun onFailure(call: Call<TmdbSeriesResponse>, t: Throwable) {
-                Log.e("API_ERROR", "Error fetching series", t)
-            }
+        loadSeries(page, onSeriesLoaded = {
+            series = it
         })
     }
 
@@ -308,7 +323,40 @@ fun SeriesCarousel() {
         items(series) { serie ->
             SerieItem(serie)
         }
+
+        // Detecta quando chega ao final da lista e carrega mais
+        item {
+            LaunchedEffect(series.size) {
+                if (!isLoading) {
+                    isLoading = true
+                    page++
+                    loadSeries(page) { newSeries ->
+                        series = series + newSeries
+                        isLoading = false
+                    }
+                }
+            }
+        }
     }
+}
+
+private fun loadSeries(page: Int, onSeriesLoaded: (List<Serie>) -> Unit) {
+    RetrofitInstance.api.getPopularSeries(AppConstants.TMDB_API_KEY, page).enqueue(object :
+        Callback<TmdbSeriesResponse> {
+        override fun onResponse(
+            call: Call<TmdbSeriesResponse>,
+            response: Response<TmdbSeriesResponse>
+        ) {
+            response.body()?.let {
+                onSeriesLoaded(it.results)
+            }
+        }
+
+        override fun onFailure(call: Call<TmdbSeriesResponse>, t: Throwable) {
+            Log.e("API_ERROR", "Error fetching series", t)
+            onSeriesLoaded(emptyList())  // Retorna uma lista vazia se falhar
+        }
+    })
 }
 
 @Composable
