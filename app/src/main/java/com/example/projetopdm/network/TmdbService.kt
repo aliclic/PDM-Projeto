@@ -63,4 +63,21 @@ interface TmdbService {
         @Query("language") language: String,
         @Query("page") page: Int
     ): Call<TmdbMovieResponse>
+
+    // Searchs
+    @GET("search/movie")
+    fun searchMovies(
+        @Query("api_key") apiKey: String,
+        @Query("query") query: String,
+        @Query("language") language: String = "pt-BR",
+        @Query("page") page: Int = 1
+    ): Call<TmdbMovieResponse>
+
+    @GET("search/tv")
+    fun searchSeries(
+        @Query("api_key") apiKey: String,
+        @Query("query") query: String,
+        @Query("language") language: String = "pt-BR",
+        @Query("page") page: Int = 1
+    ): Call<TmdbSeriesResponse>
 }

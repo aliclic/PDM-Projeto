@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,6 +42,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.projetopdm.ui.screens.TelaCadastro
+import com.example.projetopdm.ui.screens.TelaDeBusca
 import com.example.projetopdm.ui.screens.TelaLogin
 import com.example.projetopdm.ui.screens.TelaPerfil
 import com.example.projetopdm.ui.screens.TelaPrincipal
@@ -122,6 +124,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        composable("principal/{userId}/buscar") { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                            TelaDeBusca(
+                                modifier = Modifier.padding(innerPadding),
+                            )
+                        }
                         composable("perfil/{userId}") { backStackEntry ->
                             val userId = backStackEntry.arguments?.getString("userId") ?: ""
                             TelaPerfil(
@@ -165,6 +173,20 @@ fun BottomNavigationBar(navController: NavController, userId: String) {
                     }
                 )
                 Text("Home")
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    tint = Color(0xFF00186F),
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Buscar",
+                    modifier = Modifier.size(32.dp).clickable {
+                        navController.navigate("principal/$userId/buscar")
+                    }
+                )
+                Text("Buscar")
             }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
