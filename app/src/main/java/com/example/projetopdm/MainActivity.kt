@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -41,10 +40,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.projetopdm.ui.telas.TelaCadastro
-import com.example.projetopdm.ui.telas.TelaLogin
-import com.example.projetopdm.ui.telas.TelaPerfil
-import com.example.projetopdm.ui.telas.TelaPrincipal
+import com.example.projetopdm.ui.screens.TelaCadastro
+import com.example.projetopdm.ui.screens.TelaLogin
+import com.example.projetopdm.ui.screens.TelaPerfil
+import com.example.projetopdm.ui.screens.TelaPrincipal
 import com.example.projetopdm.ui.theme.ProjetoPDMTheme
 
 class MainActivity : ComponentActivity() {

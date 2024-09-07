@@ -1,4 +1,4 @@
-package com.example.projetopdm.ui.telas
+package com.example.projetopdm.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,7 +30,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import com.example.projetopdm.model.dados.Usuario
 import com.example.projetopdm.model.dados.UsuarioDAO
 
 @Composable

@@ -1,4 +1,4 @@
-package com.example.projetopdm.ui.telas
+package com.example.projetopdm.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
