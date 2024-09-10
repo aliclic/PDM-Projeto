@@ -65,7 +65,7 @@ fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: (String) -> Unit, on
             TextField(
                 value = login,
                 onValueChange = { login = it },
-                placeholder = { Text("Login") },
+                placeholder = { Text("Nickname") },
                 modifier = Modifier.width(280.dp)
             )
             Spacer(modifier = Modifier.height(10.dp))
@@ -80,11 +80,11 @@ fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: (String) -> Unit, on
             Button(
                 onClick = {
                     if (login.isNotBlank() && senha.isNotBlank()) {
-                        usuarioDAO.buscarPorNome(login) { usuarioEncontrado ->
+                        usuarioDAO.buscarPorNickName(login) { usuarioEncontrado ->
                             if (usuarioEncontrado != null && usuarioEncontrado.senha == senha) {
                                 onSignInClick(usuarioEncontrado.id) // Passa o userId
                             } else {
-                                mensagemErro = "Login ou senha inválidos!"
+                                mensagemErro = "NickName ou senha inválidos!"
                             }
                         }
                     } else {

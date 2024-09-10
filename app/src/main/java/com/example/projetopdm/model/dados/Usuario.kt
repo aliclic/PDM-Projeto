@@ -6,7 +6,9 @@ data class Usuario(
 
     @DocumentId
     val id: String = "",
+    val nickName: String = "",
     val nome: String = "",
     val email: String = "",
-    val senha: String = ""
+    val senha: String = "",
+    val filmes: List<ListaFilmes> = listOf()
 )

@@ -1,5 +1,6 @@
 package com.example.projetopdm.model.dados
 
+import android.provider.ContactsContract.CommonDataKinds.Nickname
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -37,6 +38,21 @@ class UsuarioDAO{
             }
     }
 
+    fun buscarPorNickName(nickName: String, callback: (Usuario?) -> Unit) {
+        db.collection("usuarios").whereEqualTo("nickName", nickName).get()
+            .addOnSuccessListener { document ->
+                if (!document.isEmpty) {
+                    val usuario = document.documents[0].toObject<Usuario>()
+                    callback(usuario)
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
+
     fun buscarPorId(id: String, callback: (Usuario?) -> Unit) {
         db.collection("usuarios").document(id).get()
             .addOnSuccessListener { document ->
@@ -60,57 +76,6 @@ class UsuarioDAO{
             }
             .addOnFailureListener {
                 callback(usuario)
-            }
-    }
-
-    fun atualizarNome(userId: String, novoNome: String, onComplete: (Boolean) -> Unit) {
-        val userDocumentRef = collectionRef.document(userId)
-
-        // Atualiza o campo 'nome' no documento do usuário
-        userDocumentRef.update("nome", novoNome)
-            .addOnSuccessListener {
-                // Chama o callback com 'true' em caso de sucesso
-                onComplete(true)
-            }
-            .addOnFailureListener { exception ->
-                // Log de erro em caso de falha
-                println("Erro ao atualizar o nome: ${exception.message}")
-                // Chama o callback com 'false' em caso de falha
-                onComplete(false)
-            }
-    }
-
-    fun atualizarEmail(userId: String, novoEmail: String, onComplete: (Boolean) -> Unit) {
-        val userDocumentRef = collectionRef.document(userId)
-
-        // Atualiza o campo 'nome' no documento do usuário
-        userDocumentRef.update("email", novoEmail)
-            .addOnSuccessListener {
-                // Chama o callback com 'true' em caso de sucesso
-                onComplete(true)
-            }
-            .addOnFailureListener { exception ->
-                // Log de erro em caso de falha
-                println("Erro ao atualizar o email: ${exception.message}")
-                // Chama o callback com 'false' em caso de falha
-                onComplete(false)
-            }
-    }
-
-    fun atualizarSenha(userId: String, novaSenha: String, onComplete: (Boolean) -> Unit) {
-        val userDocumentRef = collectionRef.document(userId)
-
-        // Atualiza o campo 'senha' no documento do usuário
-        userDocumentRef.update("senha", novaSenha)
-            .addOnSuccessListener {
-                // Chama o callback com 'true' em caso de sucesso
-                onComplete(true)
-            }
-            .addOnFailureListener { exception ->
-                // Log de erro em caso de falha
-                println("Erro ao atualizar a senha: ${exception.message}")
-                // Chama o callback com 'false' em caso de falha
-                onComplete(false)
             }
     }
 

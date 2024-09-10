@@ -1,0 +1,11 @@
+package com.example.projetopdm.model.dados;
+import com.example.projetopdm.network.Movie;
+import com.google.firebase.firestore.DocumentId
+
+public class ListaFilmes {
+
+    @DocumentId
+    val id: String = ""
+    val titulo: String = " "
+    val lista: List<Movie> = listOf()
+}

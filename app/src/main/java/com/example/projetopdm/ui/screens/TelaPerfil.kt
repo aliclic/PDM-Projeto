@@ -23,14 +23,23 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.projetopdm.model.dados.UsuarioDAO
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.imePadding
 
 
 @Composable
 fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () -> Unit) {
     var nome by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var nickName by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var originalNome by remember { mutableStateOf("") }
+    var originalNickName by remember { mutableStateOf("") }
     var originalEmail by remember { mutableStateOf("") }
     var originalSenha by remember { mutableStateOf("") }
     var mensagemErro by remember { mutableStateOf<String?>(null) }
@@ -47,9 +56,11 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
             usuario?.let {
                 nome = it.nome
                 email = it.email
+                nickName = it.nickName
                 senha = it.senha
 
                 originalNome = it.nome
+                originalNickName = it.nickName
                 originalEmail = it.email
                 originalSenha = it.senha
             }
@@ -57,7 +68,7 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
     }
 
     fun verificarModificacoes() {
-        isModified = nome != originalNome || email != originalEmail || senha != originalSenha
+        isModified = nome != originalNome || nickName != originalNickName || email != originalEmail || senha != originalSenha
     }
 
     Column(
@@ -66,12 +77,32 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+            .imePadding()
     ) {
+        Spacer(modifier = Modifier.padding(50.dp))
 
-        Spacer(modifier = Modifier.padding(8.dp))
+        // Círculo para simular a foto de perfil
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(120.dp)
+                .clip(CircleShape)
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawCircle(color = Color.Gray) // Cor cinza para indicar o lugar da foto
+            }
+            Text(
+                text = "Foto",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        Spacer(modifier = Modifier.padding(16.dp))
 
         Text(
-            text = "Perfil do Usuário",
+            text = nickName,
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -86,6 +117,18 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
                 verificarModificacoes()
             },
             label = { Text("Nome") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.padding(8.dp))
+
+        TextField(
+            value = nickName,
+            onValueChange = {
+                nickName = it
+                verificarModificacoes()
+            },
+            label = { Text("NickName") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -124,12 +167,14 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
                 onClick = {
                     val novosDados = mapOf(
                         "nome" to nome,
+                        "nickName" to nickName,
                         "email" to email,
                         "senha" to senha
                     )
                     usuarioDAO.atualizarUsuario(userId, novosDados) { sucesso ->
                         if (sucesso) {
                             originalNome = nome
+                            originalNickName = nickName
                             originalEmail = email
                             originalSenha = senha
                             isModified = false
@@ -140,7 +185,6 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
                         }
                     }
                 },
-                //colors = ButtonDefaults.buttonColors(containerColor = Color.Blue, contentColor = Color.White),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Atualizar")
@@ -165,7 +209,6 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
 
         Spacer(modifier = Modifier.padding(8.dp))
 
-
         // Botão para deletar a conta
         Button(
             onClick = { showDialog = true },
@@ -174,6 +217,8 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
         ) {
             Text("Deletar Conta")
         }
+
+        Spacer(modifier = Modifier.padding(50.dp))
 
         // Diálogo de confirmação
         if (showDialog) {

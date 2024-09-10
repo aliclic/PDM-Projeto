@@ -37,6 +37,7 @@ import com.example.projetopdm.model.dados.UsuarioDAO
 @Composable
 fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSignInClick: () -> Unit) {
     var nome by remember { mutableStateOf("") }
+    var nickName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var mensagemErro by remember { mutableStateOf<String?>(null) }
@@ -73,6 +74,13 @@ fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSig
             )
             Spacer(modifier = Modifier.height(10.dp))
             TextField(
+                value = nickName,
+                onValueChange = { nickName = it },
+                placeholder = { Text("NickName") },
+                modifier = Modifier.width(280.dp)
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            TextField(
                 value = email,
                 onValueChange = { email = it },
                 placeholder = { Text("Email") },
@@ -89,9 +97,10 @@ fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSig
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-                        if (nome.isNotBlank() && email.isNotBlank() && senha.isNotBlank()) {
+                        if (nome.isNotBlank() && nickName.isNotBlank() && email.isNotBlank() && senha.isNotBlank()) {
                             val usuario = Usuario(
                                 nome = nome,
+                                nickName = nickName,
                                 email = email,
                                 senha = senha
                             )
