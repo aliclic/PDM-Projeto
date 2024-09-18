@@ -14,7 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.projetopdm.network.Movie
+import com.example.projetopdm.model.Movie
 import com.example.projetopdm.ui.components.MovieItem
 import com.example.projetopdm.ui.modals.MovieDetailsModal
 import com.example.projetopdm.ui.screens.loadPopularMovies

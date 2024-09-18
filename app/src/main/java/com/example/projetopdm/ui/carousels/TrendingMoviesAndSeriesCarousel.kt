@@ -14,9 +14,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.projetopdm.network.Movie
-import com.example.projetopdm.network.Serie
-import com.example.projetopdm.network.TrendingItem
+import com.example.projetopdm.model.Movie
+import com.example.projetopdm.model.Serie
+import com.example.projetopdm.model.TrendingItem
 import com.example.projetopdm.ui.components.TrendingItem
 import com.example.projetopdm.ui.modals.MovieDetailsModal
 import com.example.projetopdm.ui.modals.SerieDetailsModal
@@ -26,19 +26,18 @@ import com.example.projetopdm.ui.screens.loadTrendingMoviesAndSeries
 @Composable
 fun TrendingMoviesAndSeriesCarousel() {
     var trendingItems by remember { mutableStateOf(listOf<TrendingItem>()) }
-    var selectedItem by remember { mutableStateOf<TrendingItem?>(null) }
     var selectedMovie by remember { mutableStateOf<Movie?>(null) }
     var selectedSerie by remember { mutableStateOf<Serie?>(null) }
-    var page by remember { mutableStateOf(1) }  // Variável para rastrear a página atual
-    var isLoading by remember { mutableStateOf(false) }  // Variável para evitar múltiplas chamadas
+    var page by remember { mutableStateOf(1) }
+    var isLoading by remember { mutableStateOf(false) }
     var isModalVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         isLoading = true
-        loadTrendingMoviesAndSeries(page, onTrendingLoaded = {
-            trendingItems = it
+        loadTrendingMoviesAndSeries(page) { items ->
+            trendingItems = items
             isLoading = false
-        })
+        }
     }
 
     LazyRow(
@@ -49,19 +48,18 @@ fun TrendingMoviesAndSeriesCarousel() {
             TrendingItem(item, onClick = {
                 when (item.media_type) {
                     "movie" -> {
-                        selectedMovie = item.toMovie()  // Converte para Movie
-                        selectedSerie = null  // Limpa seleção de série
+                        selectedMovie = item.toMovie()
+                        selectedSerie = null
                     }
                     "tv" -> {
-                        selectedSerie = item.toSerie()  // Converte para Serie
-                        selectedMovie = null  // Limpa seleção de filme
+                        selectedSerie = item.toSerie()
+                        selectedMovie = null
                     }
                 }
                 isModalVisible = true
             })
         }
 
-        // Detecta quando chega ao final da lista e carrega mais
         item {
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.padding(16.dp))
@@ -69,8 +67,8 @@ fun TrendingMoviesAndSeriesCarousel() {
                 LaunchedEffect(trendingItems.size) {
                     isLoading = true
                     page++
-                    loadTrendingMoviesAndSeries(page) { newSeries ->
-                        trendingItems = trendingItems + newSeries
+                    loadTrendingMoviesAndSeries(page) { newItems ->
+                        trendingItems = trendingItems + newItems
                         isLoading = false
                     }
                 }
@@ -78,11 +76,10 @@ fun TrendingMoviesAndSeriesCarousel() {
         }
     }
 
-    // Exibe o modal dependendo do tipo selecionado
     if (isModalVisible) {
         selectedMovie?.let { movie ->
             MovieDetailsModal(movie) {
-                isModalVisible = false // Fecha o modal
+                isModalVisible = false
             }
         }
 
@@ -97,17 +94,37 @@ fun TrendingMoviesAndSeriesCarousel() {
 fun TrendingItem.toMovie(): Movie {
     return Movie(
         id = this.id,
-        title = this.title ?: "",
+        adult = this.adult ?: false,
+        backdrop_path = this.backdrop_path,
+        genre_ids = this.genre_ids ?: listOf(),
+        original_language = this.original_language ?: "Unknown",
         overview = this.overview ?: "",
-        poster_path = this.poster_path ?: ""
+        popularity = this.popularity ?: 0.0,
+        poster_path = this.poster_path,
+        vote_average = this.vote_average ?: 0.0,
+        vote_count = this.vote_count ?: 0,
+        original_title = this.original_title ?: "",
+        release_date = this.release_date,
+        title = this.title ?: "",
+        video = this.video ?: false // Ajustar se o item contiver informações de vídeo
     )
 }
 
 fun TrendingItem.toSerie(): Serie {
     return Serie(
         id = this.id,
-        name = this.name ?: "",
+        adult = this.adult ?: false,
+        backdrop_path = this.backdrop_path,
+        genre_ids = this.genre_ids ?: listOf(),
+        original_language = this.original_language ?: "Unknown",
         overview = this.overview ?: "",
-        poster_path = this.poster_path ?: ""
+        popularity = this.popularity ?: 0.0,
+        poster_path = this.poster_path,
+        vote_average = this.vote_average ?: 0.0,
+        vote_count = this.vote_count ?: 0,
+        original_name = this.original_name ?: "",
+        first_air_date = this.first_air_date,
+        name = this.name ?: "",
+        origin_country = this.origin_country ?: listOf()
     )
 }

@@ -14,13 +14,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.projetopdm.network.Movie
+import androidx.navigation.NavController
+import com.example.projetopdm.model.Movie
 import com.example.projetopdm.ui.components.MovieItem
 import com.example.projetopdm.ui.modals.MovieDetailsModal
 import com.example.projetopdm.ui.screens.loadTopRatedMovies
 
 @Composable
-fun FilmesBemAvaliadosCarousel() {
+fun FilmesBemAvaliadosCarousel(navController: NavController) {
     var movies by remember { mutableStateOf(listOf<Movie>()) }
     var selectedMovie by remember { mutableStateOf<Movie?>(null) }
     var page by remember { mutableStateOf(1) }  // Variável para rastrear a página atual

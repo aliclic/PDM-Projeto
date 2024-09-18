@@ -14,7 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.projetopdm.network.Serie
+import com.example.projetopdm.model.Serie
 import com.example.projetopdm.ui.components.SerieItem
 import com.example.projetopdm.ui.modals.SerieDetailsModal
 import com.example.projetopdm.ui.screens.loadTopRatedSeries

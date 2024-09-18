@@ -1,5 +1,5 @@
 package com.example.projetopdm.model.dados;
-import com.example.projetopdm.network.Movie;
+import com.example.projetopdm.model.Movie
 import com.google.firebase.firestore.DocumentId
 
 public class ListaFilmes {

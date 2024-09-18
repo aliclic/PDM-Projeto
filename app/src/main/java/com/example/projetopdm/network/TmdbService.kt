@@ -1,5 +1,6 @@
 package com.example.projetopdm.network
 
+import com.example.projetopdm.model.Movie
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -13,7 +14,7 @@ interface TmdbService {
         @Query("api_key") apiKey: String,
         @Query("language") language: String,
         @Query("page") page: Int
-    ): Call<TmdbTrendingResponse>
+    ): Call<TmdbTrendingItemResponse>
 
     @GET("movie/popular")
     fun getPopularMovies(
@@ -27,7 +28,7 @@ interface TmdbService {
         @Query("api_key") apiKey: String,
         @Query("language") language: String,
         @Query("page") page: Int
-    ): Call<TmdbSeriesResponse>
+    ): Call<TmdbSerieResponse>
 
     @GET("movie/top_rated")
     fun getTopRatedMovies(
@@ -41,7 +42,7 @@ interface TmdbService {
         @Query("api_key") apiKey: String,
         @Query("language") language: String,
         @Query("page") page: Int
-    ): Call<TmdbSeriesResponse>
+    ): Call<TmdbSerieResponse>
 
     @GET("movie/now_playing")
     fun getNowPlayingMovies(
@@ -55,7 +56,7 @@ interface TmdbService {
         @Query("api_key") apiKey: String,
         @Query("language") language: String,
         @Query("page") page: Int
-    ): Call<TmdbSeriesResponse>
+    ): Call<TmdbSerieResponse>
 
     @GET("movie/upcoming")
     fun getUpcomingMovies(
@@ -63,6 +64,14 @@ interface TmdbService {
         @Query("language") language: String,
         @Query("page") page: Int
     ): Call<TmdbMovieResponse>
+
+    // GetById
+    @GET("movie/{movie_id}")
+    suspend fun getMovieById(
+        @Path("movie_id") movieId: Int,
+        @Query("api_key") apiKey: String,
+        @Query("language") language: String = "pt-BR"
+    ): Movie
 
     // Searchs
     @GET("search/movie")
@@ -74,10 +83,10 @@ interface TmdbService {
     ): Call<TmdbMovieResponse>
 
     @GET("search/tv")
-    fun searchSeries(
+    fun searchTVShows(
         @Query("api_key") apiKey: String,
         @Query("query") query: String,
         @Query("language") language: String = "pt-BR",
         @Query("page") page: Int = 1
-    ): Call<TmdbSeriesResponse>
+    ): Call<TmdbSerieResponse>
 }

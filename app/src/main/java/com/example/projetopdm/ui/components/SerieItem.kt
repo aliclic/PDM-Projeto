@@ -19,7 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.projetopdm.AppConstants
-import com.example.projetopdm.network.Serie
+import com.example.projetopdm.model.Serie
 
 @Composable
 fun SerieItem(serie: Serie, onClick: () -> Unit) {
@@ -36,15 +36,6 @@ fun SerieItem(serie: Serie, onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .clickable { onClick() }
-        )
-        Icon(
-            imageVector = Icons.Filled.Favorite,
-            contentDescription = "Favorito",
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(8.dp)
-                .size(24.dp),
-            tint = Color.LightGray
         )
     }
 }

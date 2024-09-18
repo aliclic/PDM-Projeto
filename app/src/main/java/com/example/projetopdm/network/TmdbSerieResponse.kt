@@ -1,6 +1,8 @@
 package com.example.projetopdm.network
 
-data class TmdbSeriesResponse(
+import com.example.projetopdm.model.Serie
+
+data class TmdbSerieResponse(
     val page: Int,
     val results: List<Serie>,
     val total_pages: Int,

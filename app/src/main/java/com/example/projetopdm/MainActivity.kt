@@ -43,6 +43,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.projetopdm.ui.screens.TelaCadastro
 import com.example.projetopdm.ui.screens.TelaDeBusca
+//import com.example.projetopdm.ui.screens.TelaDeBusca
 import com.example.projetopdm.ui.screens.TelaLogin
 import com.example.projetopdm.ui.screens.TelaPerfil
 import com.example.projetopdm.ui.screens.TelaPrincipal
@@ -121,7 +122,8 @@ class MainActivity : ComponentActivity() {
                                 userId = userId,
                                 onLogoffClick = {
                                     navController.navigate("perfil/$userId")
-                                }
+                                },
+                                navController = navController
                             )
                         }
                         composable("principal/{userId}/buscar") { backStackEntry ->
@@ -168,9 +170,11 @@ fun BottomNavigationBar(navController: NavController, userId: String) {
                     tint = Color(0xFF00186F),
                     imageVector = Icons.Default.Home,
                     contentDescription = "Home",
-                    modifier = Modifier.size(32.dp).clickable {
-                        navController.navigate("principal/$userId")
-                    }
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable {
+                            navController.navigate("principal/$userId")
+                        }
                 )
                 Text("Home")
             }
@@ -182,9 +186,11 @@ fun BottomNavigationBar(navController: NavController, userId: String) {
                     tint = Color(0xFF00186F),
                     imageVector = Icons.Default.Search,
                     contentDescription = "Buscar",
-                    modifier = Modifier.size(32.dp).clickable {
-                        navController.navigate("principal/$userId/buscar")
-                    }
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable {
+                            navController.navigate("principal/$userId/buscar")
+                        }
                 )
                 Text("Buscar")
             }
@@ -196,9 +202,11 @@ fun BottomNavigationBar(navController: NavController, userId: String) {
                     tint = Color(0xFF00186F),
                     imageVector = Icons.Default.Favorite,
                     contentDescription = "Favoritos",
-                    modifier = Modifier.size(32.dp).clickable {
-                        // Navegação para uma tela de Favoritos pode ser adicionada aqui
-                    }
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable {
+                            // Navegação para uma tela de Favoritos pode ser adicionada aqui
+                        }
                 )
                 Text("Favoritos")
             }
@@ -210,9 +218,11 @@ fun BottomNavigationBar(navController: NavController, userId: String) {
                     tint = Color(0xFF00186F),
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Perfil",
-                    modifier = Modifier.size(32.dp).clickable {
-                        navController.navigate("perfil/$userId")
-                    }
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable {
+                            navController.navigate("perfil/$userId")
+                        }
                 )
                 Text("Perfil")
             }

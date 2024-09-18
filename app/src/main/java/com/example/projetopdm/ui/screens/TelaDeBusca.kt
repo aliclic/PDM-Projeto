@@ -13,21 +13,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,14 +31,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.projetopdm.AppConstants
-import com.example.projetopdm.network.Movie
+import com.example.projetopdm.model.Movie
+import com.example.projetopdm.model.MediaItem
+import com.example.projetopdm.model.Serie
 import com.example.projetopdm.network.RetrofitInstance
 import com.example.projetopdm.network.TmdbMovieResponse
+import com.example.projetopdm.network.TmdbSerieResponse
 import com.example.projetopdm.ui.components.MovieItem
+import com.example.projetopdm.ui.components.SerieItem
 import com.example.projetopdm.ui.modals.MovieDetailsModal
+import com.example.projetopdm.ui.modals.SerieDetailsModal
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -52,34 +52,29 @@ import retrofit2.Response
 fun TelaDeBusca(modifier: Modifier = Modifier) {
     var searchQuery by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    var searchResults by remember { mutableStateOf<List<Movie>>(emptyList()) }
-    var selectedMovie by remember { mutableStateOf<Movie?>(null) }
+    var searchResults by remember { mutableStateOf<List<MediaItem>>(emptyList()) } // Lista de resultados como MediaItem
+    var currentPage by remember { mutableStateOf(1) }  // Página atual
+    var isLoadingMore by remember { mutableStateOf(false) } // Indica se mais itens estão sendo carregados
+    var selectedItem: MediaItem? by remember { mutableStateOf(null) }
     var isModalVisible by remember { mutableStateOf(false) }
-
-    // Debounce para busca
-    var lastSearchQuery by remember { mutableStateOf("") }
-    val debounceDelay = 500L // meio segundo de atraso para o debounce
+    val debounceDelay = 500L
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Campo de texto para busca com estilo
+        // Campo de busca
         BasicTextField(
             value = searchQuery,
             onValueChange = { query ->
                 searchQuery = query
+                currentPage = 1 // Reinicia a página quando a busca muda
+                isLoading = true
 
-                // Iniciar debounce quando houver alterações
-                if (query.isNotEmpty() && query != lastSearchQuery) {
-                    lastSearchQuery = query
-                    isLoading = true
-
-                    buscarFilmesComDebounce(query, debounceDelay) { filmes ->
-                        searchResults = filmes
-                        isLoading = false
-                    }
+                buscarFilmesESeriesComDebounce(query, debounceDelay, currentPage) { resultados ->
+                    searchResults = resultados
+                    isLoading = false
                 }
             },
             modifier = Modifier
@@ -89,14 +84,7 @@ fun TelaDeBusca(modifier: Modifier = Modifier) {
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
                 .padding(16.dp),
             singleLine = true,
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = {
-                isLoading = true
-                buscarFilmes(searchQuery) { filmes ->
-                    searchResults = filmes
-                    isLoading = false
-                }
-            }),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
             decorationBox = { innerTextField ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -110,7 +98,7 @@ fun TelaDeBusca(modifier: Modifier = Modifier) {
                     )
                     Box(Modifier.weight(1f)) {
                         if (searchQuery.isEmpty()) {
-                            Text(text = "Buscar filmes...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                            Text(text = "Buscar filmes ou séries...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         }
                         innerTextField()
                     }
@@ -126,50 +114,106 @@ fun TelaDeBusca(modifier: Modifier = Modifier) {
         } else {
             // Exibir resultados da busca
             LazyVerticalGrid(
-                columns = GridCells.Fixed(3), // Número de colunas fixo
+                columns = GridCells.Fixed(3),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(searchResults) { movie ->
-                    MovieItem(movie, onClick = {
-                        selectedMovie = movie
-                        isModalVisible = true
-                    })
+                items(searchResults) { item ->
+                    when (item) {
+                        is Movie -> MovieItem(item, onClick = {
+                            selectedItem = item
+                            isModalVisible = true
+                        })
+                        is Serie -> SerieItem(item, onClick = {
+                            selectedItem = item
+                            isModalVisible = true
+                        })
+                    }
+                }
+
+                if (isLoadingMore) {
+                    item {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        )
+                    }
                 }
             }
 
-            if (isModalVisible) {
-                MovieDetailsModal(selectedMovie) {
-                    isModalVisible = false // Fecha o modal ao clicar no botão de fechar
+            // Detecta quando o usuário chega ao final da lista para carregar mais itens
+            val lastVisibleIndex = searchResults.size - 1
+            if (lastVisibleIndex >= 0 && !isLoadingMore && lastVisibleIndex == searchResults.size - 1) {
+                currentPage += 1
+                isLoadingMore = true
+                buscarFilmesESeries(searchQuery, currentPage) { novosResultados ->
+                    searchResults = searchResults + novosResultados
+                    isLoadingMore = false
+                }
+            }
+        }
+    }
+
+    // Mostrar o modal correspondente ao item selecionado
+    if (isModalVisible) {
+        selectedItem?.let { item ->
+            when (item) {
+                is Movie -> {
+                    MovieDetailsModal(item) {
+                        isModalVisible = false // Fecha o modal ao clicar no botão de fechar
+                    }
+                }
+                is Serie -> {
+                    SerieDetailsModal(item) {
+                        isModalVisible = false // Fecha o modal ao clicar no botão de fechar
+                    }
                 }
             }
         }
     }
 }
 
-// Função para buscar filmes com debounce
-private fun buscarFilmesComDebounce(query: String, delayMs: Long, onMoviesLoaded: (List<Movie>) -> Unit) {
-    // Inicia um atraso de debounce
+private fun buscarFilmesESeriesComDebounce(query: String, delayMs: Long, page: Int, onResultsLoaded: (List<MediaItem>) -> Unit) {
     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-        buscarFilmes(query, onMoviesLoaded)
+        buscarFilmesESeries(query, page, onResultsLoaded)
     }, delayMs)
 }
 
-// Função para buscar filmes ao pressionar Enter ou após o debounce
-private fun buscarFilmes(query: String, onMoviesLoaded: (List<Movie>) -> Unit) {
-    RetrofitInstance.api.searchMovies(AppConstants.TMDB_API_KEY, query, "pt-BR", 1)
-        .enqueue(object : Callback<TmdbMovieResponse> {
-            override fun onResponse(call: Call<TmdbMovieResponse>, response: Response<TmdbMovieResponse>) {
-                response.body()?.let {
-                    onMoviesLoaded(it.results)
-                }
+private fun buscarFilmesESeries(query: String, page: Int, onResultsLoaded: (List<MediaItem>) -> Unit) {
+    val filmesCall = RetrofitInstance.api.searchMovies(AppConstants.TMDB_API_KEY, query, "pt-BR", page)
+    val seriesCall = RetrofitInstance.api.searchTVShows(AppConstants.TMDB_API_KEY, query, "pt-BR", page)
+
+    val mediaItems = mutableListOf<MediaItem>()
+
+    // Chamada para buscar filmes
+    filmesCall.enqueue(object : Callback<TmdbMovieResponse> {
+        override fun onResponse(call: Call<TmdbMovieResponse>, response: Response<TmdbMovieResponse>) {
+            response.body()?.let {
+                mediaItems.addAll(it.results) // Adiciona filmes
             }
 
-            override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
-                Log.e("API_ERROR", "Erro ao buscar filmes", t)
-                onMoviesLoaded(emptyList())
-            }
-        })
+            // Após buscar os filmes, buscar as séries
+            seriesCall.enqueue(object : Callback<TmdbSerieResponse> {
+                override fun onResponse(call: Call<TmdbSerieResponse>, response: Response<TmdbSerieResponse>) {
+                    response.body()?.let {
+                        mediaItems.addAll(it.results) // Adiciona séries
+                    }
+                    onResultsLoaded(mediaItems)
+                }
+
+                override fun onFailure(call: Call<TmdbSerieResponse>, t: Throwable) {
+                    Log.e("API_ERROR", "Erro ao buscar séries", t)
+                    onResultsLoaded(mediaItems)
+                }
+            })
+        }
+
+        override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
+            Log.e("API_ERROR", "Erro ao buscar filmes", t)
+            onResultsLoaded(emptyList())
+        }
+    })
 }

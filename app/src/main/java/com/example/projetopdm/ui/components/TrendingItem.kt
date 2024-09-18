@@ -21,7 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.projetopdm.AppConstants
-import com.example.projetopdm.network.TrendingItem
+import com.example.projetopdm.model.TrendingItem
 
 @Composable
 fun TrendingItem(item: TrendingItem, onClick: () -> Unit) {
@@ -38,17 +38,6 @@ fun TrendingItem(item: TrendingItem, onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .clickable { onClick() }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Icon(
-            imageVector = Icons.Filled.Favorite,
-            contentDescription = "Favorito",
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(8.dp)
-                .size(24.dp),
-            tint = Color.LightGray
         )
     }
 }

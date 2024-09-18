@@ -36,14 +36,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
 import com.example.projetopdm.AppConstants
-import com.example.projetopdm.network.Movie
+import com.example.projetopdm.model.Movie
+import com.example.projetopdm.model.Serie
+import com.example.projetopdm.model.TrendingItem
 import com.example.projetopdm.network.RetrofitInstance
-import com.example.projetopdm.network.Serie
 import com.example.projetopdm.network.TmdbMovieResponse
-import com.example.projetopdm.network.TmdbSeriesResponse
-import com.example.projetopdm.network.TmdbTrendingResponse
-import com.example.projetopdm.network.TrendingItem
+import com.example.projetopdm.network.TmdbSerieResponse
+import com.example.projetopdm.network.TmdbTrendingItemResponse
 import com.example.projetopdm.ui.carousels.FilmesBemAvaliadosCarousel
 import com.example.projetopdm.ui.carousels.FilmesEmCartazCarousel
 import com.example.projetopdm.ui.carousels.FilmesPopularesCarousel
@@ -52,6 +53,7 @@ import com.example.projetopdm.ui.carousels.SeriesBemAvaliadasCarousel
 import com.example.projetopdm.ui.carousels.SeriesEmExibicaoCarousel
 import com.example.projetopdm.ui.carousels.SeriesPopularesCarousel
 import com.example.projetopdm.ui.carousels.TrendingMoviesAndSeriesCarousel
+//import com.example.projetopdm.ui.carousels.TrendingMoviesAndSeriesCarousel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -90,7 +92,7 @@ private fun <T> loadSeries(
                 // Aqui você pode processar a resposta para extrair a lista de séries
                 // Supondo que a resposta contenha um campo `results` que é uma lista de séries
                 @Suppress("UNCHECKED_CAST")
-                val seriesList = (it as? TmdbSeriesResponse)?.results ?: emptyList()
+                val seriesList = (it as? TmdbSerieResponse)?.results ?: emptyList()
                 onSeriesLoaded(seriesList)
             }
         }
@@ -105,10 +107,10 @@ private fun <T> loadSeries(
 // Função para carregar apenas filmes e séries trending
 fun loadTrendingMoviesAndSeries(page: Int, onTrendingLoaded: (List<TrendingItem>) -> Unit) {
     RetrofitInstance.api.getTrendingAll("week", AppConstants.TMDB_API_KEY, "pt-BR", page).enqueue(object :
-        Callback<TmdbTrendingResponse> {
+        Callback<TmdbTrendingItemResponse> {
         override fun onResponse(
-            call: Call<TmdbTrendingResponse>,
-            response: Response<TmdbTrendingResponse>
+            call: Call<TmdbTrendingItemResponse>,
+            response: Response<TmdbTrendingItemResponse>
         ) {
             response.body()?.let { trendingResponse ->
                 val filteredItems = trendingResponse.results.filter {
@@ -118,7 +120,7 @@ fun loadTrendingMoviesAndSeries(page: Int, onTrendingLoaded: (List<TrendingItem>
             }
         }
 
-        override fun onFailure(call: Call<TmdbTrendingResponse>, t: Throwable) {
+        override fun onFailure(call: Call<TmdbTrendingItemResponse>, t: Throwable) {
             Log.e("API_ERROR", "Error fetching trending movies and series", t)
             onTrendingLoaded(emptyList())  // Retorna uma lista vazia se falhar
         }
@@ -167,8 +169,9 @@ fun loadOnTheAirSeries(page: Int, onSeriesLoaded: (List<Serie>) -> Unit) {
     loadSeries(call, onSeriesLoaded)
 }
 
+
 @Composable
-fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: () -> Unit) {
+fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: () -> Unit, navController: NavController) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -227,7 +230,7 @@ fun TelaPrincipal(modifier: Modifier = Modifier, userId: String, onLogoffClick: 
                 .padding(start = 16.dp, top = 16.dp, bottom = 5.dp)
                 .align(Alignment.Start)
         )
-        FilmesBemAvaliadosCarousel()
+        FilmesBemAvaliadosCarousel(navController)
 
         Spacer(modifier = Modifier.height(16.dp))
 
