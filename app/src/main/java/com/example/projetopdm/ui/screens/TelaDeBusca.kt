@@ -84,7 +84,7 @@ fun TelaDeBusca(modifier: Modifier = Modifier) {
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
                 .padding(16.dp),
             singleLine = true,
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
             decorationBox = { innerTextField ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +49,7 @@ import com.example.projetopdm.ui.screens.TelaDeBusca
 import com.example.projetopdm.ui.screens.TelaLogin
 import com.example.projetopdm.ui.screens.TelaPerfil
 import com.example.projetopdm.ui.screens.TelaPrincipal
+import com.example.projetopdm.ui.screens.TelaFavoritos
 import com.example.projetopdm.ui.theme.ProjetoPDMTheme
 
 class MainActivity : ComponentActivity() {
@@ -132,6 +135,13 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.padding(innerPadding),
                             )
                         }
+                        composable("principal/{userId}/TelaFavoritos") { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                            TelaFavoritos(
+                                userId = userId,
+                                modifier = Modifier.padding(innerPadding),
+                            )
+                        }
                         composable("perfil/{userId}") { backStackEntry ->
                             val userId = backStackEntry.arguments?.getString("userId") ?: ""
                             TelaPerfil(
@@ -200,15 +210,15 @@ fun BottomNavigationBar(navController: NavController, userId: String) {
             ) {
                 Icon(
                     tint = Color(0xFF00186F),
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Favoritos",
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Minhas Listas",
                     modifier = Modifier
                         .size(32.dp)
                         .clickable {
-                            // Navegação para uma tela de Favoritos pode ser adicionada aqui
+                            navController.navigate("principal/$userId/TelaFavoritos")
                         }
                 )
-                Text("Favoritos")
+                Text("Minhas Listas")
             }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
