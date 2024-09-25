@@ -29,7 +29,11 @@ import androidx.compose.foundation.layout.imePadding
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () -> Unit) {
+fun TelaPerfil(
+    userId: String,
+    modifier: Modifier = Modifier,
+    onBackClick: () -> Unit,
+) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     var nome by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -103,7 +107,7 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Campo para o novo nome do usuário
+        // Campos de entrada para nome, apelido, email e senha
         TextField(
             value = nome,
             onValueChange = {
@@ -116,7 +120,6 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
 
         Spacer(modifier = Modifier.padding(8.dp))
 
-        // Campo de NickName
         TextField(
             value = nickName,
             onValueChange = {
@@ -129,7 +132,6 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
 
         Spacer(modifier = Modifier.padding(8.dp))
 
-        // Campo de email
         TextField(
             value = email,
             onValueChange = {
@@ -142,7 +144,6 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
 
         Spacer(modifier = Modifier.padding(8.dp))
 
-        // Campo de senha
         TextField(
             value = senha,
             onValueChange = {
@@ -186,13 +187,17 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
             }
         } else {
             Button(
-                onClick = onBackClick,
+                onClick = {
+                    FirebaseAuth.getInstance().signOut()
+                    onBackClick()
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray, contentColor = Color.White),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Sair")
             }
         }
+
         Spacer(modifier = Modifier.padding(8.dp))
 
         // Botão para deletar a conta
@@ -266,3 +271,4 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
         }
     }
 }
+
