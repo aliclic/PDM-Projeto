@@ -25,38 +25,39 @@ import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.projetopdm.model.dados.UsuarioDAO
 import com.google.firebase.firestore.FieldValue
 
 
-fun getUserFavorites(userId: String, onFavoritesLoaded: (List<ListaFilmes>) -> Unit) {
-    val db = FirebaseFirestore.getInstance()
-    db.collection("usuarios").document(userId).get()
-        .addOnSuccessListener { document ->
-            val user = document.toObject(Usuario::class.java)
-            user?.let {
-                onFavoritesLoaded(it.filmes)
-            }
-        }
-        .addOnFailureListener { exception ->
-            Log.e("Firestore", "Error getting user favorites", exception)
-            onFavoritesLoaded(emptyList()) // Retorna uma lista vazia se falhar
-        }
-}
-
-fun addNewList(userId: String, listName: String) {
-    val db = FirebaseFirestore.getInstance()
-    val newList = ListaFilmes(titulo = listName)
-
-    db.collection("usuarios").document(userId).update(
-        "filmes", FieldValue.arrayUnion(newList)
-    )
-        .addOnSuccessListener {
-            Log.d("Firestore", "Nova lista adicionada com sucesso")
-        }
-        .addOnFailureListener { exception ->
-            Log.e("Firestore", "Erro ao adicionar nova lista", exception)
-        }
-}
+//fun getUserFavorites(userId: String, onFavoritesLoaded: (List<ListaFilmes>) -> Unit) {
+//    val db = FirebaseFirestore.getInstance()
+//    db.collection("usuarios").document(userId).get()
+//        .addOnSuccessListener { document ->
+//            val user = document.toObject(Usuario::class.java)
+//            user?.let {
+//                onFavoritesLoaded(it.filmes)
+//            }
+//        }
+//        .addOnFailureListener { exception ->
+//            Log.e("Firestore", "Error getting user favorites", exception)
+//            onFavoritesLoaded(emptyList()) // Retorna uma lista vazia se falhar
+//        }
+//}
+//
+//fun addNewList(userId: String, listName: String) {
+//    val db = FirebaseFirestore.getInstance()
+//    val newList = ListaFilmes(titulo = listName)
+//
+//    db.collection("usuarios").document(userId).update(
+//        "filmes", FieldValue.arrayUnion(newList)
+//    )
+//        .addOnSuccessListener {
+//            Log.d("Firestore", "Nova lista adicionada com sucesso")
+//        }
+//        .addOnFailureListener { exception ->
+//            Log.e("Firestore", "Erro ao adicionar nova lista", exception)
+//        }
+//}
 
 @Composable
 fun TelaFavoritos(
@@ -67,16 +68,17 @@ fun TelaFavoritos(
     var searchQuery by remember { mutableStateOf("") } // Campo de busca
     var showAddListDialog by remember { mutableStateOf(false) } // Controla a exibição do diálogo
     var newListName by remember { mutableStateOf("") } // Nome da nova lista
+    val usuarioDAO = UsuarioDAO()
 
     // Carregar os filmes favoritos do usuário
     LaunchedEffect(userId) {
-        getUserFavorites(userId) { filmes ->
+        usuarioDAO.getUserFavorites(userId) { filmes ->
             listaFilmes = filmes
         }
     }
 
     fun refreshFavorites() {
-        getUserFavorites(userId) { filmes ->
+        usuarioDAO.getUserFavorites(userId) { filmes ->
             listaFilmes = filmes
         }
     }
@@ -222,10 +224,13 @@ fun TelaFavoritos(
                     Button(
                         onClick = {
                             if (newListName.isNotBlank()) {
-                                addNewList(userId, newListName)
-                                refreshFavorites()
-                                newListName = ""
-                                showAddListDialog = false
+                                usuarioDAO.addNewList(userId, newListName) { success ->
+                                    if (success) {
+                                        refreshFavorites()
+                                        newListName = ""
+                                        showAddListDialog = false
+                                    }
+                                }
                             }
                         }
                     ) {

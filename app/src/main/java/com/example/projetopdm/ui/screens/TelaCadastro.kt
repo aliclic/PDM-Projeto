@@ -29,13 +29,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-
 import com.example.projetopdm.model.dados.Usuario
 import com.example.projetopdm.model.dados.UsuarioDAO
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.delay
 
 @Composable
-fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSignInClick: () -> Unit) {
+fun TelaCadastro(
+    modifier: Modifier = Modifier,
+    onSignUpClick: () -> Unit,
+    onSignInClick: () -> Unit
+) {
     var nome by remember { mutableStateOf("") }
     var nickName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -44,6 +49,8 @@ fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSig
     var mensagemSucesso by remember { mutableStateOf<String?>(null) }
 
     val usuarioDAO = UsuarioDAO()
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
 
     Box(
         contentAlignment = Alignment.Center,
@@ -97,28 +104,40 @@ fun TelaCadastro(modifier: Modifier = Modifier, onSignUpClick: () -> Unit, onSig
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-                        if (nome.isNotBlank() && nickName.isNotBlank() && email.isNotBlank() && senha.isNotBlank()) {
-                            val usuario = Usuario(
-                                nome = nome,
-                                nickName = nickName,
-                                email = email,
-                                senha = senha
-                            )
-                            usuarioDAO.adicionar(usuario) { usuarioAdicionado: Usuario ->
-                                if (usuarioAdicionado.id.isNotEmpty()) {
-                                    mensagemSucesso = "Usuário cadastrado com sucesso!"
-                                    onSignUpClick()
+                    if (nome.isNotBlank() && nickName.isNotBlank() && email.isNotBlank() && senha.isNotBlank()) {
+                        auth.createUserWithEmailAndPassword(email, senha)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    val userId = auth.currentUser?.uid ?: ""
+                                    val usuario = Usuario(
+                                        id = userId, // O ID do Firebase Authentication
+                                        nome = nome,
+                                        nickName = nickName,
+                                        email = email,
+                                        senha = senha,
+                                        filmes = listOf()
+                                    )
+                                    // Adiciona o usuário ao Firestore
+                                    usuarioDAO.adicionar(usuario) { usuarioAdicionado ->
+                                        if (usuarioAdicionado.id.isNotEmpty()) {
+                                            mensagemSucesso = "Usuário cadastrado com sucesso!"
+                                            onSignUpClick()
+                                        } else {
+                                            mensagemErro = "Erro ao cadastrar usuário no Firestore!"
+                                        }
+                                    }
                                 } else {
-                                    mensagemErro = "Erro ao cadastrar usuário!"
+                                    mensagemErro = task.exception?.message ?: "Erro ao cadastrar no Authentication"
                                 }
                             }
-                        } else {
-                            mensagemErro = "Por favor, preencha todos os campos!"
-                        }
-                    },
+                    } else {
+                        mensagemErro = "Por favor, preencha todos os campos!"
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00186F),
-                    contentColor = Color.White),
+                    contentColor = Color.White
+                ),
                 modifier = Modifier.width(280.dp)
             ) {
                 Text("Cadastrar")

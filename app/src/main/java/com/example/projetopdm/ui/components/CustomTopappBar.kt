@@ -49,13 +49,6 @@ fun CustomTopappBar(title: String) {
             modifier = Modifier
                 .background(topBarColor) // Fundo para a TopAppBar
         )
-        WavyShape(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(20.0.dp), // Ajuste a altura da onda conforme necessário
-            topWaveColor = backgroundColor, // Cor da onda convexa (superior)
-            bottomWaveColor = topBarColor // Cor da onda côncava (inferior)
-        )
     }
 }
 

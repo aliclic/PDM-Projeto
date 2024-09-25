@@ -51,6 +51,7 @@ import com.example.projetopdm.ui.screens.TelaPerfil
 import com.example.projetopdm.ui.screens.TelaPrincipal
 import com.example.projetopdm.ui.screens.TelaFavoritos
 import com.example.projetopdm.ui.theme.ProjetoPDMTheme
+import com.example.projetopdm.model.dados.UsuarioDAO
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -105,7 +106,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onSignUpClick = {
                                     navController.navigate("signup")
-                                }
+                                },
+                                usuarioDAO = UsuarioDAO()
                             )
                         }
                         composable("signup") {
@@ -243,14 +245,24 @@ fun BottomNavigationBar(navController: NavController, userId: String) {
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
-    TelaLogin(modifier, onSignInClick = {}, onSignUpClick = {})
+    TelaLogin(
+        modifier = modifier,
+        onSignInClick = {},
+        onSignUpClick = {},
+        usuarioDAO = UsuarioDAO() // Adicionando o parâmetro `usuarioDAO`
+    )
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     ProjetoPDMTheme {
-        TelaLogin(onSignInClick = {}, onSignUpClick = {})
+        TelaLogin(
+            onSignInClick = {},
+            onSignUpClick = {},
+            usuarioDAO = UsuarioDAO() // Adicionando o parâmetro `usuarioDAO`
+        )
+
     }
 }
 

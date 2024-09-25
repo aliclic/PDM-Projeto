@@ -1,8 +1,12 @@
 package com.example.projetopdm.model.dados
 
 import android.provider.ContactsContract.CommonDataKinds.Nickname
+import android.util.Log
 import androidx.navigation.NavController
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
@@ -13,105 +17,157 @@ class UsuarioDAO{
     private val collectionRef = db.collection("usuarios")
 
     fun buscar(callback: (List<Usuario>) -> Unit) {
+        Log.d("Firestore", "Iniciando busca de usuários")
         db.collection("usuarios").get()
             .addOnSuccessListener { document ->
+                Log.d("Firestore", "Documentos retornados com sucesso")
                 val usuarios = document.toObjects<Usuario>()
+                Log.d("Firestore", "Usuários convertidos: ${usuarios.size} encontrados")
                 callback(usuarios)
             }
-            .addOnFailureListener {
+            .addOnFailureListener { exception ->
+                Log.e("FirestoreError", "Erro ao buscar usuários", exception)
                 callback(emptyList())
             }
     }
 
-    fun buscarPorNome(nome: String, callback: (Usuario?) -> Unit) {
-        db.collection("usuarios").whereEqualTo("nome", nome).get()
-            .addOnSuccessListener { document ->
-                if (!document.isEmpty) {
-                    val usuario = document.documents[0].toObject<Usuario>()
+    fun buscarPorId(userId: String, callback: (Usuario?) -> Unit) {
+        db.collection("usuarios")
+            .whereEqualTo("id", userId)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty) {
+                    val usuario = documents.documents[0].toObject(Usuario::class.java)
                     callback(usuario)
                 } else {
-                    callback(null)
+                    callback(null) // Não encontrou o usuário
                 }
             }
             .addOnFailureListener {
-                callback(null)
-            }
-    }
-
-    fun buscarPorNickName(nickName: String, callback: (Usuario?) -> Unit) {
-        db.collection("usuarios").whereEqualTo("nickName", nickName).get()
-            .addOnSuccessListener { document ->
-                if (!document.isEmpty) {
-                    val usuario = document.documents[0].toObject<Usuario>()
-                    callback(usuario)
-                } else {
-                    callback(null)
-                }
-            }
-            .addOnFailureListener {
-                callback(null)
-            }
-    }
-
-    fun buscarPorId(id: String, callback: (Usuario?) -> Unit) {
-        db.collection("usuarios").document(id).get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    val usuario = document.toObject<Usuario>()
-                    callback(usuario)
-                } else {
-                    callback(null)
-                }
-            }
-            .addOnFailureListener {
-                callback(null)
+                callback(null) // Houve uma falha na busca
             }
     }
 
     fun adicionar(usuario: Usuario, callback: (Usuario) -> Unit) {
-        db.collection("usuarios").add(usuario)
-            .addOnSuccessListener { documentReference ->
-                val updatedUsuario = usuario.copy(id = documentReference.id)
-                callback(updatedUsuario)
+        val userId = usuario.id // O ID do usuário já deve vir do Firebase Authentication
+        db.collection("usuarios").document(userId).set(usuario)
+            .addOnSuccessListener {
+                callback(usuario) // Retorna o usuário com o ID do Firebase Authentication
             }
             .addOnFailureListener {
                 callback(usuario)
             }
     }
 
-    fun atualizarUsuario(userId: String, novosDados: Map<String, Any>, onComplete: (Boolean) -> Unit) {
-        val userDocumentRef = collectionRef.document(userId)
+    fun atualizarUsuario(
+        userId: String,
+        novosDados: Map<String, Any>,
+        novoEmail: String?,
+        novaSenha: String?,
+        callback: (Boolean) -> Unit
+    ) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val db = FirebaseFirestore.getInstance()
+        val docRef = db.collection("usuarios").document(userId)
 
-        // Atualiza múltiplos campos no documento do usuário
-        userDocumentRef.update(novosDados)
+        // Atualizar dados no Firestore
+        docRef.update(novosDados)
             .addOnSuccessListener {
-                // Chama o callback com 'true' em caso de sucesso
-                onComplete(true)
+                // Se houver email ou senha para atualizar
+                if (novoEmail != null || novaSenha != null) {
+                    val updateEmailTask = if (novoEmail != null) {
+                        currentUser?.updateEmail(novoEmail)
+                    } else null
+
+                    val updateSenhaTask = if (novaSenha != null) {
+                        currentUser?.updatePassword(novaSenha)
+                    } else null
+                    if (updateEmailTask != null || updateSenhaTask != null) {
+                        val tasks = mutableListOf<Task<Void>>()
+                        updateEmailTask?.let { tasks.add(it) }
+                        updateSenhaTask?.let { tasks.add(it) }
+
+                        Tasks.whenAllComplete(tasks)
+                            .addOnSuccessListener {
+                                callback(true) // Sucesso em atualizar Firestore e Auth
+                            }
+                            .addOnFailureListener {
+                                callback(false) // Falha ao atualizar o Firebase Auth
+                            }
+                    } else {
+                        callback(true) // Somente Firestore foi atualizado
+                    }
+                } else {
+                    callback(true) // Somente Firestore foi atualizado
+                }
             }
-            .addOnFailureListener { exception ->
-                // Log de erro em caso de falha
-                println("Erro ao atualizar o usuário: ${exception.message}")
-                // Chama o callback com 'false' em caso de falha
-                onComplete(false)
+            .addOnFailureListener {
+                callback(false) // Falha ao atualizar o Firestore
             }
     }
 
-
-
     fun deletarUsuario(userId: String, callback: (Boolean) -> Unit) {
         val userDocumentRef = collectionRef.document(userId)
+        val currentUser = FirebaseAuth.getInstance().currentUser
 
-        // Deleta o documento do usuário
+        // Deleta o documento do Firestore
         userDocumentRef.delete()
             .addOnSuccessListener {
-                // Chama o callback com 'true' em caso de sucesso
-                callback(true)
+                // Se o documento for deletado com sucesso, deletamos o usuário no Firebase Authentication
+                currentUser?.delete()
+                    ?.addOnSuccessListener {
+                        callback(true)
+                    }
+                    ?.addOnFailureListener { exception ->
+                        println("Erro ao deletar o usuário do Firebase Authentication: ${exception.message}")
+                        callback(false)
+                    }
             }
             .addOnFailureListener { exception ->
-                // Log de erro em caso de falha
-                println("Erro ao deletar o usuário: ${exception.message}")
-                // Chama o callback com 'false' em caso de falha
+                // Falha ao deletar o documento do Firestore
+                println("Erro ao deletar o documento do Firestore: ${exception.message}")
                 callback(false)
+            }
+    }
+
+    fun getUserFavorites(userId: String, onFavoritesLoaded: (List<ListaFilmes>) -> Unit) {
+        collectionRef.document(userId).get()
+            .addOnSuccessListener { document ->
+                val user = document.toObject(Usuario::class.java)
+                user?.let {
+                    onFavoritesLoaded(it.filmes)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("Firestore", "Error getting user favorites", exception)
+                onFavoritesLoaded(emptyList())
+            }
+    }
+
+    fun addNewList(userId: String, listName: String, onComplete: (Boolean) -> Unit) {
+        val newList = ListaFilmes(titulo = listName)
+
+        collectionRef.document(userId).update(
+            "filmes", FieldValue.arrayUnion(newList)
+        ).addOnSuccessListener {
+            Log.d("Firestore", "Nova lista adicionada com sucesso")
+            onComplete(true)
+        }.addOnFailureListener { exception ->
+            Log.e("Firestore", "Erro ao adicionar nova lista", exception)
+            onComplete(false)
+        }
+    }
+
+    fun signIn(email: String, senha: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+        val auth = FirebaseAuth.getInstance()
+        auth.signInWithEmailAndPassword(email, senha)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val userId = auth.currentUser?.uid ?: ""
+                    onSuccess(userId)
+                } else {
+                    onError(task.exception?.message ?: "Erro de autenticação")
+                }
             }
     }
 

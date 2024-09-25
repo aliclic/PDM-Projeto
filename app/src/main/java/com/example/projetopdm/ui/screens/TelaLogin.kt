@@ -33,12 +33,15 @@ import kotlinx.coroutines.delay
 import com.example.projetopdm.model.dados.UsuarioDAO
 
 @Composable
-fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: (String) -> Unit, onSignUpClick: () -> Unit) {
+fun TelaLogin(
+    modifier: Modifier = Modifier,
+    onSignInClick: (String) -> Unit,
+    onSignUpClick: () -> Unit,
+    usuarioDAO: UsuarioDAO
+) {
     var login by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var mensagemErro by remember { mutableStateOf<String?>(null) }
-
-    val usuarioDAO = UsuarioDAO()
 
     Box(
         contentAlignment = Alignment.Center,
@@ -65,7 +68,7 @@ fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: (String) -> Unit, on
             TextField(
                 value = login,
                 onValueChange = { login = it },
-                placeholder = { Text("Nickname") },
+                placeholder = { Text("email") },
                 modifier = Modifier.width(280.dp)
             )
             Spacer(modifier = Modifier.height(10.dp))
@@ -80,13 +83,14 @@ fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: (String) -> Unit, on
             Button(
                 onClick = {
                     if (login.isNotBlank() && senha.isNotBlank()) {
-                        usuarioDAO.buscarPorNickName(login) { usuarioEncontrado ->
-                            if (usuarioEncontrado != null && usuarioEncontrado.senha == senha) {
-                                onSignInClick(usuarioEncontrado.id) // Passa o userId
-                            } else {
-                                mensagemErro = "NickName ou senha inválidos!"
+                        usuarioDAO.signIn(login, senha,
+                            onSuccess = { userId ->
+                                onSignInClick(userId) // Passa o ID do usuário autenticado
+                            },
+                            onError = { errorMessage ->
+                                mensagemErro = errorMessage
                             }
-                        }
+                        )
                     } else {
                         mensagemErro = "Por favor, preencha todos os campos!"
                     }
@@ -116,3 +120,4 @@ fun TelaLogin(modifier: Modifier = Modifier, onSignInClick: (String) -> Unit, on
         }
     }
 }
+

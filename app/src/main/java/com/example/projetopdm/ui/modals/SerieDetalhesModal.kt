@@ -21,18 +21,34 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.projetopdm.model.Serie
+import com.example.projetopdm.model.dados.ListaFilmes
+import com.example.projetopdm.model.dados.UsuarioDAO
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
-    val expanded = remember { mutableStateOf(false) }
-
     if (serie != null) {
+        // Estado para controlar se o dropdown está aberto ou não
+        val expanded = remember { mutableStateOf(false) }
+        val usuarioDAO = UsuarioDAO()
+        val listas = remember { mutableStateOf<List<ListaFilmes>>(emptyList()) }
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+        LaunchedEffect(userId) {
+            userId?.let { id ->
+                usuarioDAO.getUserFavorites(id) { filmes ->
+                    listas.value = filmes
+                }
+            }
+        }
+
         Dialog(onDismissRequest = { onDismiss() }) {
             Surface(
                 modifier = Modifier
@@ -41,62 +57,48 @@ fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface
             ) {
-                Column(modifier = Modifier
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState())
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    // Exibe o nome da serie
-                    Text(
-                        text = serie.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    // Exibe a descrição
+                    Text(text = serie.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 8.dp))
                     Text(text = serie.overview)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // Botão para fechar o modal
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Button(onClick = { onDismiss() }) {
                             Text(text = "Fechar")
                         }
 
-                        // Ícone de lista com dropdown
                         Column {
-                            IconButton(onClick = { expanded.value = !expanded.value }) {
-                                Icon(
-                                    imageVector = Icons.Default.List, // Ícone de lista padrão do Material
-                                    contentDescription = "Lista"
-                                )
+                            IconButton(onClick = {
+                                expanded.value = !expanded.value
+                            }) {
+                                Icon(imageVector = Icons.Default.List, contentDescription = "Lista")
                             }
-                            // Dropdown que aparece ao clicar no ícone
+
                             DropdownMenu(
                                 expanded = expanded.value,
                                 onDismissRequest = { expanded.value = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("Ação 1") },
-                                    onClick = {
-                                        // Fechar o dropdown após a ação
-                                        expanded.value = false
+                                if (listas.value.isEmpty()) {
+                                    // Exibe a mensagem se não houver listas
+                                    DropdownMenuItem(
+                                        text = { Text("Você ainda não tem uma lista") },
+                                        onClick = { expanded.value = false }
+                                    )
+                                } else {
+                                    listas.value.forEach { lista ->
+                                        DropdownMenuItem(
+                                            text = { Text(lista.titulo) },
+                                            onClick = {
+                                                expanded.value = false
+                                            }
+                                        )
                                     }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Ação 2") },
-                                    onClick = {
-                                        expanded.value = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Ação 3") },
-                                    onClick = {
-                                        expanded.value = false
-                                    }
-                                )
+                                }
                             }
                         }
                     }

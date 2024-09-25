@@ -5,11 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,10 +26,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.imePadding
-
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () -> Unit) {
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     var nome by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var nickName by remember { mutableStateOf("") }
@@ -50,9 +47,8 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
 
     val usuarioDAO = UsuarioDAO()
 
-    // Buscar informações do usuário pelo ID
-    LaunchedEffect(userId) {
-        usuarioDAO.buscarPorId(userId) { usuario ->
+    LaunchedEffect(currentUserId) {
+        usuarioDAO.buscarPorId(currentUserId) { usuario ->
             usuario?.let {
                 nome = it.nome
                 email = it.email
@@ -102,26 +98,25 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
         Spacer(modifier = Modifier.padding(16.dp))
 
         Text(
-            text = nickName,
+            text = "Olá $nickName !",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        Spacer(modifier = Modifier.padding(8.dp))
-
-        // Campo de nome do usuário
+        // Campo para o novo nome do usuário
         TextField(
             value = nome,
             onValueChange = {
                 nome = it
                 verificarModificacoes()
             },
-            label = { Text("Nome") },
+            label = { Text("Novo Nome") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.padding(8.dp))
 
+        // Campo de NickName
         TextField(
             value = nickName,
             onValueChange = {
@@ -134,7 +129,7 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
 
         Spacer(modifier = Modifier.padding(8.dp))
 
-        // Campo de email do usuário
+        // Campo de email
         TextField(
             value = email,
             onValueChange = {
@@ -147,7 +142,7 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
 
         Spacer(modifier = Modifier.padding(8.dp))
 
-        // Campo de senha do usuário
+        // Campo de senha
         TextField(
             value = senha,
             onValueChange = {
@@ -171,7 +166,7 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
                         "email" to email,
                         "senha" to senha
                     )
-                    usuarioDAO.atualizarUsuario(userId, novosDados) { sucesso ->
+                    usuarioDAO.atualizarUsuario(currentUserId, novosDados, novoEmail = email, novaSenha = senha) { sucesso ->
                         if (sucesso) {
                             originalNome = nome
                             originalNickName = nickName
@@ -191,22 +186,13 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
             }
         } else {
             Button(
-                onClick = {
-                    usuarioDAO.logout { sucesso ->
-                        if (sucesso) {
-                            onBackClick() // Redireciona para a tela de login
-                        } else {
-                            mensagemErro = "Erro ao fazer logout!"
-                        }
-                    }
-                },
+                onClick = onBackClick,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray, contentColor = Color.White),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Sair")
             }
         }
-
         Spacer(modifier = Modifier.padding(8.dp))
 
         // Botão para deletar a conta
@@ -218,7 +204,7 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
             Text("Deletar Conta")
         }
 
-        Spacer(modifier = Modifier.padding(50.dp))
+        Spacer(modifier = Modifier.padding(100.dp))
 
         // Diálogo de confirmação
         if (showDialog) {
@@ -230,7 +216,7 @@ fun TelaPerfil(userId: String, modifier: Modifier = Modifier, onBackClick: () ->
                     Button(
                         onClick = {
                             showDialog = false
-                            usuarioDAO.deletarUsuario(userId) { sucesso ->
+                            usuarioDAO.deletarUsuario(currentUserId) { sucesso ->
                                 if (sucesso) {
                                     onBackClick()
                                 } else {
