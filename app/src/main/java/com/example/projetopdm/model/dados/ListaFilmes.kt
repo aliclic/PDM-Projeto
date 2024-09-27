@@ -6,6 +6,6 @@ data class ListaFilmes(
 
     @DocumentId
     val id: String = "",
-    val titulo: String = " ",
-    val lista: List<Movie> = listOf()
+    val titulo: String? = "Lista",
+    val filmes: List<Int> = emptyList()
 )

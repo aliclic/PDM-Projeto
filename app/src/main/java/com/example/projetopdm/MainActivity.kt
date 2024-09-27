@@ -141,6 +141,7 @@ class MainActivity : ComponentActivity() {
                             val userId = backStackEntry.arguments?.getString("userId") ?: ""
                             TelaFavoritos(
                                 userId = userId,
+                                navController = navController,
                                 modifier = Modifier.padding(innerPadding),
                             )
                         }

@@ -3,6 +3,7 @@ package com.example.projetopdm.model.dados
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.util.Log
 import androidx.navigation.NavController
+import com.example.projetopdm.model.Movie
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
@@ -130,12 +131,27 @@ class UsuarioDAO{
             }
     }
 
-    fun getUserFavorites(userId: String, onFavoritesLoaded: (List<ListaFilmes>) -> Unit) {
+    fun getUserMovieLists(userId: String, onComplete: (List<ListaFilmes>) -> Unit) {
         collectionRef.document(userId).get()
             .addOnSuccessListener { document ->
                 val user = document.toObject(Usuario::class.java)
                 user?.let {
-                    onFavoritesLoaded(it.filmes)
+                    onComplete(it.filmes) // Retorna a lista de filmes do usuário
+                } ?: onComplete(emptyList())
+            }
+            .addOnFailureListener { exception ->
+                Log.e("Firestore", "Erro ao carregar listas de filmes", exception)
+                onComplete(emptyList())
+            }
+    }
+
+    fun getUserFavorites(userId: String, onFavoritesLoaded: (List<Int>) -> Unit) {
+        collectionRef.document(userId).get()
+            .addOnSuccessListener { document ->
+                val user = document.toObject(Usuario::class.java)
+                user?.let {
+                    val favoriteMovieIds = it.filmes.flatMap { lista -> lista.filmes } // Extrai apenas os IDs dos filmes
+                    onFavoritesLoaded(favoriteMovieIds)
                 }
             }
             .addOnFailureListener { exception ->
@@ -143,6 +159,7 @@ class UsuarioDAO{
                 onFavoritesLoaded(emptyList())
             }
     }
+
 
     fun addNewList(userId: String, listName: String, onComplete: (Boolean) -> Unit) {
         val newList = ListaFilmes(titulo = listName)
@@ -170,6 +187,50 @@ class UsuarioDAO{
                 }
             }
     }
+
+    fun adicionarFilmeNaLista(userId: String, listaId: String, filmeId: Int, onComplete: (Boolean) -> Unit) {
+        val userRef = db.collection("usuarios").document(userId)
+
+        userRef.get()
+            .addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot.exists()) {
+                    val usuario = documentSnapshot.toObject(Usuario::class.java)
+                    val listaFilmes = usuario?.filmes?.find { it.id == listaId }
+
+                    listaFilmes?.let { lista ->
+                        // Adiciona o ID do filme à lista
+                        val filmesAtualizados = lista.filmes.toMutableList().apply {
+                            add(filmeId)
+                        }
+
+                        // Atualiza a lista no Firestore
+                        val listaAtualizada = lista.copy(filmes = filmesAtualizados)
+                        val listasAtualizadas = usuario.filmes.map {
+                            if (it.id == listaId) listaAtualizada else it
+                        }
+
+                        // Atualiza o documento do usuário
+                        userRef.update("filmes", listasAtualizadas)
+                            .addOnSuccessListener {
+                                onComplete(true)
+                            }
+                            .addOnFailureListener {
+                                onComplete(false)
+                            }
+                    } ?: run {
+                        onComplete(false) // Lista não encontrada
+                    }
+                } else {
+                    onComplete(false) // Usuário não encontrado
+                }
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
+
+
 
     fun logout(onComplete: (Boolean) -> Unit) {
         try {

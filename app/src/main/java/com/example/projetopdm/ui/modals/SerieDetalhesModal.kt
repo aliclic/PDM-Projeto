@@ -1,5 +1,6 @@
 package com.example.projetopdm.ui.modals
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,19 +36,20 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
     if (serie != null) {
-        // Estado para controlar se o dropdown está aberto ou não
         val expanded = remember { mutableStateOf(false) }
         val usuarioDAO = UsuarioDAO()
         val listas = remember { mutableStateOf<List<ListaFilmes>>(emptyList()) }
         val userId = FirebaseAuth.getInstance().currentUser?.uid
 
+        // Carrega as listas de filmes favoritas do usuário
         LaunchedEffect(userId) {
             userId?.let { id ->
-                usuarioDAO.getUserFavorites(id) { filmes ->
-                    listas.value = filmes
+                usuarioDAO.getUserMovieLists(id) { listasFilmes ->
+                    listas.value = listasFilmes // Atualiza o estado com as listas do usuário
                 }
             }
         }
+
 
         Dialog(onDismissRequest = { onDismiss() }) {
             Surface(
@@ -84,7 +86,6 @@ fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
                                 onDismissRequest = { expanded.value = false }
                             ) {
                                 if (listas.value.isEmpty()) {
-                                    // Exibe a mensagem se não houver listas
                                     DropdownMenuItem(
                                         text = { Text("Você ainda não tem uma lista") },
                                         onClick = { expanded.value = false }
@@ -92,14 +93,28 @@ fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
                                 } else {
                                     listas.value.forEach { lista ->
                                         DropdownMenuItem(
-                                            text = { Text(lista.titulo) },
+                                            text = { Text(lista.titulo ?: "Sem título") },
                                             onClick = {
                                                 expanded.value = false
+                                                try {
+                                                    userId?.let { id ->
+                                                        usuarioDAO.adicionarFilmeNaLista(id, lista.id, serie.id) { sucesso ->
+                                                            if (sucesso) {
+                                                                Log.d("Firestore", "Filme adicionado com sucesso à lista ${lista.titulo}")
+                                                            } else {
+                                                                Log.e("Firestore", "Erro ao adicionar filme à lista ${lista.titulo}")
+                                                            }
+                                                        }
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.e("ModalError", "Erro ao adicionar filme à lista", e)
+                                                }
                                             }
                                         )
                                     }
                                 }
                             }
+
                         }
                     }
                 }
@@ -107,3 +122,4 @@ fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
         }
     }
 }
+
