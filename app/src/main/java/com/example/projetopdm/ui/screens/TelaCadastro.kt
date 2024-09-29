@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.sp
 import com.example.projetopdm.model.dados.Usuario
 import com.example.projetopdm.model.dados.UsuarioDAO
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 
@@ -105,31 +107,41 @@ fun TelaCadastro(
             Button(
                 onClick = {
                     if (nome.isNotBlank() && nickName.isNotBlank() && email.isNotBlank() && senha.isNotBlank()) {
-                        auth.createUserWithEmailAndPassword(email, senha)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    val userId = auth.currentUser?.uid ?: ""
-                                    val usuario = Usuario(
-                                        id = userId, // O ID do Firebase Authentication
-                                        nome = nome,
-                                        nickName = nickName,
-                                        email = email,
-                                        senha = senha,
-                                        filmes = listOf()
-                                    )
-                                    // Adiciona o usuário ao Firestore
-                                    usuarioDAO.adicionar(usuario) { usuarioAdicionado ->
-                                        if (usuarioAdicionado.id.isNotEmpty()) {
-                                            mensagemSucesso = "Usuário cadastrado com sucesso!"
-                                            onSignUpClick()
-                                        } else {
-                                            mensagemErro = "Erro ao cadastrar usuário no Firestore!"
+                        if (senha.length < 6) {
+                            mensagemErro = "A senha deve ter no mínimo 6 caracteres"
+                        } else {
+                            auth.createUserWithEmailAndPassword(email, senha)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        val userId = auth.currentUser?.uid ?: ""
+                                        val usuario = Usuario(
+                                            id = userId, // O ID do Firebase Authentication
+                                            nome = nome,
+                                            nickName = nickName,
+                                            email = email,
+                                            senha = senha,
+                                            filmes = listOf()
+                                        )
+                                        // Adiciona o usuário ao Firestore
+                                        usuarioDAO.adicionar(usuario) { usuarioAdicionado ->
+                                            if (usuarioAdicionado.id.isNotEmpty()) {
+                                                mensagemSucesso = "Usuário cadastrado com sucesso!"
+                                                onSignUpClick()
+                                            } else {
+                                                mensagemErro = "Erro ao cadastrar usuário no Firestore!"
+                                            }
+                                        }
+                                    } else {
+                                        // Tratando o caso de email duplicado ou formato inválido
+                                        val exception = task.exception
+                                        mensagemErro = when (exception) {
+                                            is FirebaseAuthUserCollisionException -> "E-mail já cadastrado"
+                                            is FirebaseAuthInvalidCredentialsException -> "Formato de e-mail inválido"
+                                            else -> exception?.message ?: "Erro ao cadastrar no Authentication"
                                         }
                                     }
-                                } else {
-                                    mensagemErro = task.exception?.message ?: "Erro ao cadastrar no Authentication"
                                 }
-                            }
+                        }
                     } else {
                         mensagemErro = "Por favor, preencha todos os campos!"
                     }
@@ -142,6 +154,8 @@ fun TelaCadastro(
             ) {
                 Text("Cadastrar")
             }
+
+
             mensagemErro?.let {
                 Text(
                     text = it,
@@ -165,13 +179,6 @@ fun TelaCadastro(
                     mensagemSucesso = null
                 }
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = "Entrar",
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable(onClick = onSignInClick)
-            )
         }
     }
 }

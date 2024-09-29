@@ -20,13 +20,21 @@ import androidx.compose.ui.unit.dp
 import com.example.projetopdm.model.dados.UsuarioDAO
 import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.VisualTransformation
 import com.google.firebase.auth.FirebaseAuth
+import com.example.projetopdm.R
+
 
 @Composable
 fun TelaPerfil(
@@ -43,11 +51,12 @@ fun TelaPerfil(
     var originalNickName by remember { mutableStateOf("") }
     var originalEmail by remember { mutableStateOf("") }
     var originalSenha by remember { mutableStateOf("") }
-    var mensagemErro by remember { mutableStateOf<String?>(null) }
     var isModified by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
+    var senhaVisivel by remember { mutableStateOf(false) }
+    var mensagemErro by remember { mutableStateOf<String?>(null) }
 
     val usuarioDAO = UsuarioDAO()
 
@@ -68,7 +77,7 @@ fun TelaPerfil(
     }
 
     fun verificarModificacoes() {
-        isModified = nome != originalNome || nickName != originalNickName || email != originalEmail || senha != originalSenha
+        isModified = nome != originalNome || nickName != originalNickName || senha != originalSenha
     }
 
     Column(
@@ -102,12 +111,19 @@ fun TelaPerfil(
         Spacer(modifier = Modifier.padding(16.dp))
 
         Text(
-            text = "Olá $nickName !",
+            text = "Olá $nickName!",
             style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // Exibe o e-mail do usuário
+        Text(
+            text = "$email",
+            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Campos de entrada para nome, apelido, email e senha
+        // Campos de entrada para nome, apelido e senha
         TextField(
             value = nome,
             onValueChange = {
@@ -133,51 +149,64 @@ fun TelaPerfil(
         Spacer(modifier = Modifier.padding(8.dp))
 
         TextField(
-            value = email,
-            onValueChange = {
-                email = it
-                verificarModificacoes()
-            },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.padding(8.dp))
-
-        TextField(
             value = senha,
             onValueChange = {
                 senha = it
                 verificarModificacoes()
             },
             label = { Text("Senha") },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (senhaVisivel)
+                    Icons.Filled.Close
+                else
+                    Icons.Filled.Lock
+
+                Icon(
+                    imageVector = image,
+                    contentDescription = if (senhaVisivel) "Ocultar senha" else "Mostrar senha",
+                    modifier = Modifier.clickable { senhaVisivel = !senhaVisivel }
+                )
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
+        mensagemErro?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            LaunchedEffect(Unit) {
+                kotlinx.coroutines.delay(3000)
+                mensagemErro = null
+            }
+        }
         Spacer(modifier = Modifier.padding(16.dp))
 
         // Botão "Atualizar" ou "Sair"
         if (isModified) {
             Button(
                 onClick = {
-                    val novosDados = mapOf(
-                        "nome" to nome,
-                        "nickName" to nickName,
-                        "email" to email,
-                        "senha" to senha
-                    )
-                    usuarioDAO.atualizarUsuario(currentUserId, novosDados, novoEmail = email, novaSenha = senha) { sucesso ->
-                        if (sucesso) {
-                            originalNome = nome
-                            originalNickName = nickName
-                            originalEmail = email
-                            originalSenha = senha
-                            isModified = false
-                            successMessage = "Perfil atualizado com sucesso!"
-                            showSuccessDialog = true
-                        } else {
-                            mensagemErro = "Erro ao atualizar o perfil!"
+                    if (senha.length < 6) {
+                        mensagemErro = "A senha deve ter no mínimo 6 caracteres!"
+                    } else {
+                        val novosDados = mapOf(
+                            "nome" to nome,
+                            "nickName" to nickName,
+                            "senha" to senha
+                        )
+                        usuarioDAO.atualizarUsuario(currentUserId, novosDados, novaSenha = senha, senhaAtual = originalSenha) { sucesso ->
+                            if (sucesso) {
+                                originalNome = nome
+                                originalNickName = nickName
+                                originalSenha = senha
+                                isModified = false
+                                successMessage = "Perfil atualizado com sucesso!"
+                                showSuccessDialog = true
+                            } else {
+                                mensagemErro = "Erro ao atualizar o perfil!"
+                            }
                         }
                     }
                 },
@@ -185,6 +214,7 @@ fun TelaPerfil(
             ) {
                 Text("Atualizar")
             }
+
         } else {
             Button(
                 onClick = {
@@ -255,19 +285,6 @@ fun TelaPerfil(
                     }
                 }
             )
-        }
-
-        // Exibição de mensagens de erro
-        mensagemErro?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            LaunchedEffect(Unit) {
-                kotlinx.coroutines.delay(3000)
-                mensagemErro = null
-            }
         }
     }
 }

@@ -218,6 +218,7 @@ fun TelaFavoritos(
                         Text("Cancelar")
                     }
                 }
+
             )
         }
     }

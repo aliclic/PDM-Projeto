@@ -6,7 +6,10 @@ import androidx.navigation.NavController
 import com.example.projetopdm.model.Movie
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
@@ -16,6 +19,25 @@ class UsuarioDAO{
     val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val collectionRef = db.collection("usuarios")
+
+    fun signIn(email: String, senha: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+        FirebaseAuth.getInstance().signInWithEmailAndPassword(email, senha)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // Recupera o ID do usuário autenticado
+                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                    onSuccess(userId)
+                } else {
+                    // Trata o erro de autenticação
+                    val errorMessage = when (task.exception) {
+                        is FirebaseAuthInvalidCredentialsException -> "Sua senha ou email estão errados!"
+                        is FirebaseAuthInvalidUserException -> "Usuário não encontrado"
+                        else -> "Erro ao realizar login, tente novamente"
+                    }
+                    onError(errorMessage)
+                }
+            }
+    }
 
     fun buscar(callback: (List<Usuario>) -> Unit) {
         Log.d("Firestore", "Iniciando busca de usuários")
@@ -63,49 +85,71 @@ class UsuarioDAO{
     fun atualizarUsuario(
         userId: String,
         novosDados: Map<String, Any>,
-        novoEmail: String?,
-        novaSenha: String?,
+        novaSenha: String?, // Agora, apenas a senha pode ser atualizada
+        senhaAtual: String,  // Senha atual necessária para reautenticação
         callback: (Boolean) -> Unit
     ) {
         val currentUser = FirebaseAuth.getInstance().currentUser
         val db = FirebaseFirestore.getInstance()
         val docRef = db.collection("usuarios").document(userId)
 
-        // Atualizar dados no Firestore
-        docRef.update(novosDados)
-            .addOnSuccessListener {
-                // Se houver email ou senha para atualizar
-                if (novoEmail != null || novaSenha != null) {
-                    val updateEmailTask = if (novoEmail != null) {
-                        currentUser?.updateEmail(novoEmail)
-                    } else null
+        if (currentUser != null && currentUser.email != null) {
+            reautenticarUsuario(currentUser.email!!, senhaAtual) { reautenticado ->
+                if (reautenticado) {
+                    // Atualizar dados no Firestore
+                    docRef.update(novosDados)
+                        .addOnSuccessListener {
+                            val updateSenhaTask = if (novaSenha != null) {
+                                currentUser.updatePassword(novaSenha)
+                            } else null
 
-                    val updateSenhaTask = if (novaSenha != null) {
-                        currentUser?.updatePassword(novaSenha)
-                    } else null
-                    if (updateEmailTask != null || updateSenhaTask != null) {
-                        val tasks = mutableListOf<Task<Void>>()
-                        updateEmailTask?.let { tasks.add(it) }
-                        updateSenhaTask?.let { tasks.add(it) }
-
-                        Tasks.whenAllComplete(tasks)
-                            .addOnSuccessListener {
-                                callback(true) // Sucesso em atualizar Firestore e Auth
+                            if (updateSenhaTask != null) {
+                                updateSenhaTask.addOnSuccessListener {
+                                    callback(true) // Sucesso ao atualizar senha e Firestore
+                                }.addOnFailureListener { e ->
+                                    Log.e("UPDATE_AUTH_ERROR", "Erro ao atualizar senha", e)
+                                    callback(false) // Falha ao atualizar senha no Firebase Auth
+                                }
+                            } else {
+                                callback(true) // Somente Firestore foi atualizado
                             }
-                            .addOnFailureListener {
-                                callback(false) // Falha ao atualizar o Firebase Auth
-                            }
-                    } else {
-                        callback(true) // Somente Firestore foi atualizado
-                    }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("UPDATE_FIRESTORE_ERROR", "Erro ao atualizar Firestore", e)
+                            callback(false) // Falha ao atualizar Firestore
+                        }
                 } else {
-                    callback(true) // Somente Firestore foi atualizado
+                    callback(false) // Falha na reautenticação
                 }
             }
-            .addOnFailureListener {
-                callback(false) // Falha ao atualizar o Firestore
-            }
+        } else {
+            callback(false) // Nenhum usuário autenticado
+        }
     }
+
+
+
+    fun reautenticarUsuario(email: String, senha: String, onComplete: (Boolean) -> Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+
+        if (currentUser != null) {
+            val credential = EmailAuthProvider.getCredential(email, senha)
+
+            currentUser.reauthenticate(credential)
+                .addOnSuccessListener {
+                    onComplete(true) // Reautenticação bem-sucedida
+                }
+                .addOnFailureListener { e ->
+                    Log.e("REAUTH_ERROR", "Erro ao reautenticar", e)
+                    onComplete(false) // Falha na reautenticação
+                }
+        } else {
+            onComplete(false) // Nenhum usuário autenticado
+        }
+    }
+
+
+
 
     fun deletarUsuario(userId: String, callback: (Boolean) -> Unit) {
         val userDocumentRef = collectionRef.document(userId)
@@ -173,19 +217,6 @@ class UsuarioDAO{
             Log.e("Firestore", "Erro ao adicionar nova lista", exception)
             onComplete(false)
         }
-    }
-
-    fun signIn(email: String, senha: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
-        val auth = FirebaseAuth.getInstance()
-        auth.signInWithEmailAndPassword(email, senha)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val userId = auth.currentUser?.uid ?: ""
-                    onSuccess(userId)
-                } else {
-                    onError(task.exception?.message ?: "Erro de autenticação")
-                }
-            }
     }
 
     fun adicionarFilmeNaLista(userId: String, listaId: String, filmeId: Int, onComplete: (Boolean) -> Unit) {

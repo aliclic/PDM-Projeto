@@ -88,7 +88,7 @@ fun TelaLogin(
                                 onSignInClick(userId) // Passa o ID do usuário autenticado
                             },
                             onError = { errorMessage ->
-                                mensagemErro = errorMessage
+                                mensagemErro = errorMessage // Exibe a mensagem de erro
                             }
                         )
                     } else {
@@ -120,4 +120,3 @@ fun TelaLogin(
         }
     }
 }
-
