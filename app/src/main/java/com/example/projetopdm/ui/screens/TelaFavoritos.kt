@@ -1,6 +1,8 @@
 package com.example.projetopdm.ui.screens
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.material.icons.filled.Search
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TelaFavoritos(
     userId: String,
