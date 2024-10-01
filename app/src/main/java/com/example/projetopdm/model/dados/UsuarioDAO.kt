@@ -1,5 +1,6 @@
 package com.example.projetopdm.model.dados
 
+import android.net.Uri
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.util.Log
 import androidx.navigation.NavController
@@ -14,11 +15,57 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
+import com.google.firebase.storage.FirebaseStorage
+import java.util.UUID
 
 class UsuarioDAO{
     val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val collectionRef = db.collection("usuarios")
+    private val storage = FirebaseStorage.getInstance() // Adiciona o Firebase Storage
+
+    fun uploadUserProfileImage(
+        userId: String,
+        imageUri: Uri,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        // Cria uma referência ao Firebase Storage para a pasta "profileImages"
+        val storageRef = storage.reference.child("profileImages/$userId/${UUID.randomUUID()}.jpg")
+
+        // Faz o upload da imagem para o Storage
+        storageRef.putFile(imageUri)
+            .addOnSuccessListener {
+                // Obtém a URL de download após o upload ser concluído
+                storageRef.downloadUrl.addOnSuccessListener { uri ->
+                    // Atualiza a URL no documento do usuário no Firestore
+                    collectionRef.document(userId)
+                        .update("profileImageUrl", uri.toString())
+                        .addOnSuccessListener {
+                            println("Imagem de perfil atualizada com sucesso no Firestore.")
+                            onSuccess(uri.toString()) // Retorna a URL da imagem
+                        }
+                        .addOnFailureListener { e ->
+                            println("Erro ao atualizar a URL no Firestore: ${e.message}")
+                            onError("Erro ao atualizar a URL no Firestore: ${e.message}")
+                        }
+                }
+            }
+            .addOnFailureListener { exception ->
+                println("Erro ao fazer upload da imagem: ${exception.message}")
+                onError("Erro ao fazer upload da imagem: ${exception.message}")
+            }
+    }
+
+    fun atualizarImagemPerfil(userId: String, imageUri: String, onComplete: (Boolean) -> Unit) {
+        // Exemplo de atualização da imagem de perfil no Firebase Firestore
+        val db = FirebaseFirestore.getInstance()
+        val userRef = db.collection("usuarios").document(userId)
+
+        userRef.update("profilePictureUrl", imageUri)
+            .addOnSuccessListener { onComplete(true) }
+            .addOnFailureListener { onComplete(false) }
+    }
 
     fun signIn(email: String, senha: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
         FirebaseAuth.getInstance().signInWithEmailAndPassword(email, senha)

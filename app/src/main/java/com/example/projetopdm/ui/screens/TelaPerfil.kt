@@ -1,46 +1,40 @@
 package com.example.projetopdm.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import com.example.projetopdm.model.dados.UsuarioDAO
-import androidx.compose.material3.AlertDialog
-import androidx.compose.foundation.Canvas
+import android.app.Activity
+import android.content.Intent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.VisualTransformation
-import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import com.example.projetopdm.R
-
+import com.example.projetopdm.model.dados.UsuarioDAO
+import coil.compose.rememberAsyncImagePainter
+import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 
 @Composable
 fun TelaPerfil(
     userId: String,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
+    activity: Activity
 ) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     var nome by remember { mutableStateOf("") }
@@ -87,25 +81,37 @@ fun TelaPerfil(
             .fillMaxWidth()
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
-            .imePadding()
     ) {
         Spacer(modifier = Modifier.padding(50.dp))
 
-        // Círculo para simular a foto de perfil
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
+            modifier = Modifier.size(120.dp) // Tamanho quadrado
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(color = Color.Gray) // Cor cinza para indicar o lugar da foto
-            }
-            Text(
-                text = "Foto",
-                color = Color.White,
-                style = MaterialTheme.typography.bodyMedium
+            Image(
+                painter = painterResource(id = R.drawable.profile_picture), // Substitua pelo nome do arquivo da imagem
+                contentDescription = "Foto de Perfil",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape) // Mantém a imagem circular
             )
+
+            IconButton(
+                onClick = {
+                    openImagePicker(activity)
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd) // Posiciona o botão no canto inferior direito
+                    .size(40.dp) // Tamanho do botão
+                    .background(Color.White, shape = CircleShape) // Fundo branco com formato circular
+                    .padding(8.dp) // Espaçamento interno
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Editar Foto",
+                    tint = Color.Black // Ícone preto
+                )
+            }
         }
 
         Spacer(modifier = Modifier.padding(16.dp))
@@ -116,14 +122,12 @@ fun TelaPerfil(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        // Exibe o e-mail do usuário
         Text(
             text = "$email",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Campos de entrada para nome, apelido e senha
         TextField(
             value = nome,
             onValueChange = {
@@ -184,7 +188,6 @@ fun TelaPerfil(
         }
         Spacer(modifier = Modifier.padding(16.dp))
 
-        // Botão "Atualizar" ou "Sair"
         if (isModified) {
             Button(
                 onClick = {
@@ -230,7 +233,6 @@ fun TelaPerfil(
 
         Spacer(modifier = Modifier.padding(8.dp))
 
-        // Botão para deletar a conta
         Button(
             onClick = { showDialog = true },
             colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = Color.White),
@@ -239,49 +241,43 @@ fun TelaPerfil(
             Text("Deletar Conta")
         }
 
-        Spacer(modifier = Modifier.padding(100.dp))
-
-        // Diálogo de confirmação
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
                 title = { Text("Confirmação") },
-                text = { Text("Tem certeza de que deseja deletar sua conta?") },
+                text = { Text("Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.") },
                 confirmButton = {
                     Button(
                         onClick = {
-                            showDialog = false
                             usuarioDAO.deletarUsuario(currentUserId) { sucesso ->
                                 if (sucesso) {
-                                    onBackClick()
+                                    onBackClick() // Volta para a tela de login ou outra tela após deletar a conta
                                 } else {
-                                    mensagemErro = "Erro ao deletar a conta!"
+                                    mensagemErro = "Erro ao deletar conta!"
                                 }
                             }
+                            showDialog = false
                         }
                     ) {
-                        Text("Sim")
+                        Text("Confirmar")
                     }
                 },
                 dismissButton = {
                     Button(onClick = { showDialog = false }) {
-                        Text("Não")
+                        Text("Cancelar")
                     }
                 }
             )
         }
 
-        // Diálogo de sucesso para atualizar ou deletar
         if (showSuccessDialog) {
             AlertDialog(
                 onDismissRequest = { showSuccessDialog = false },
                 title = { Text("Sucesso") },
                 text = { Text(successMessage) },
                 confirmButton = {
-                    Button(onClick = {
-                        showSuccessDialog = false
-                    }) {
-                        Text("OK")
+                    Button(onClick = { showSuccessDialog = false }) {
+                        Text("Ok")
                     }
                 }
             )
@@ -289,3 +285,13 @@ fun TelaPerfil(
     }
 }
 
+// Função para abrir o Image Picker
+private fun openImagePicker(activity: Activity) {
+    val intent = Intent().apply {
+        type = "image/*"
+        action = Intent.ACTION_GET_CONTENT
+    }
+    activity.startActivityForResult(Intent.createChooser(intent, "Selecione uma imagem"), PICK_IMAGE_REQUEST)
+}
+
+private const val PICK_IMAGE_REQUEST = 1 // Constante para identificar a solicitação de imagem

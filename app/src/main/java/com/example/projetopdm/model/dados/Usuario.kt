@@ -9,5 +9,6 @@ data class Usuario(
     val nome: String = "",
     val email: String = "",
     val senha: String = "",
-    val filmes: List<ListaFilmes> = listOf()
+    val filmes: List<ListaFilmes> = listOf(),
+    val profileImageUrl: String = ""
 )

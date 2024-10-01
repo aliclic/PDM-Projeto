@@ -1,5 +1,6 @@
 package com.example.projetopdm
 
+import android.app.Activity
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -17,11 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -43,15 +44,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.projetopdm.model.dados.UsuarioDAO
 import com.example.projetopdm.ui.screens.TelaCadastro
 import com.example.projetopdm.ui.screens.TelaDeBusca
-//import com.example.projetopdm.ui.screens.TelaDeBusca
 import com.example.projetopdm.ui.screens.TelaLogin
 import com.example.projetopdm.ui.screens.TelaPerfil
 import com.example.projetopdm.ui.screens.TelaPrincipal
 import com.example.projetopdm.ui.screens.TelaFavoritos
 import com.example.projetopdm.ui.theme.ProjetoPDMTheme
-import com.example.projetopdm.model.dados.UsuarioDAO
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -147,6 +148,7 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("perfil/{userId}") { backStackEntry ->
                             val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                            val activity = LocalContext.current as Activity // Obtendo o contexto atual como Activity
                             TelaPerfil(
                                 userId = userId,
                                 modifier = Modifier.padding(innerPadding),
@@ -154,7 +156,8 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("login") {
                                         popUpTo("principal") { inclusive = true }
                                     }
-                                }
+                                },
+                                activity = activity // Passando a Activity corretamente
                             )
                         }
                     }
@@ -175,83 +178,46 @@ fun BottomNavigationBar(navController: NavController, userId: String) {
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    tint = Color(0xFF00186F),
-                    imageVector = Icons.Default.Home,
-                    contentDescription = "Home",
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable {
-                            navController.navigate("principal/$userId")
-                        }
-                )
-                Text("Home")
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    tint = Color(0xFF00186F),
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Buscar",
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable {
-                            navController.navigate("principal/$userId/buscar")
-                        }
-                )
-                Text("Buscar")
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    tint = Color(0xFF00186F),
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Minhas Listas",
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable {
-                            navController.navigate("principal/$userId/TelaFavoritos")
-                        }
-                )
-                Text("Minhas Listas")
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    tint = Color(0xFF00186F),
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Perfil",
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable {
-                            navController.navigate("perfil/$userId")
-                        }
-                )
-                Text("Perfil")
-            }
+            // Navegação de ícones e textos para cada seção
+            IconWithText(
+                icon = Icons.Default.Home,
+                label = "Home",
+                onClick = { navController.navigate("principal/$userId") }
+            )
+            IconWithText(
+                icon = Icons.Default.Search,
+                label = "Buscar",
+                onClick = { navController.navigate("principal/$userId/buscar") }
+            )
+            IconWithText(
+                icon = Icons.Default.Menu,
+                label = "Minhas Listas",
+                onClick = { navController.navigate("principal/$userId/TelaFavoritos") }
+            )
+            IconWithText(
+                icon = Icons.Default.AccountCircle,
+                label = "Perfil",
+                onClick = { navController.navigate("perfil/$userId") }
+            )
         }
     }
 }
 
-
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    TelaLogin(
-        modifier = modifier,
-        onSignInClick = {},
-        onSignUpClick = {},
-        usuarioDAO = UsuarioDAO() // Adicionando o parâmetro `usuarioDAO`
-    )
+fun IconWithText(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        Icon(
+            tint = Color(0xFF00186F),
+            imageVector = icon,
+            contentDescription = label,
+            modifier = Modifier.size(32.dp)
+        )
+        Text(label)
+    }
 }
 
 @Preview(showBackground = true)
@@ -263,7 +229,5 @@ fun GreetingPreview() {
             onSignUpClick = {},
             usuarioDAO = UsuarioDAO() // Adicionando o parâmetro `usuarioDAO`
         )
-
     }
 }
-
