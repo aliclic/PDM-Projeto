@@ -1,5 +1,7 @@
 package com.example.projetopdm.ui.carousels
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,7 @@ import com.example.projetopdm.ui.modals.MovieDetailsModal
 import com.example.projetopdm.ui.screens.loadPopularMovies
 
 // Filmes Populares
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun FilmesPopularesCarousel() {
     var movies by remember { mutableStateOf(listOf<Movie>()) }

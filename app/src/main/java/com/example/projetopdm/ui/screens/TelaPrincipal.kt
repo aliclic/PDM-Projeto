@@ -5,8 +5,10 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -199,6 +201,7 @@ fun loadOnTheAirSeries(page: Int, onSeriesLoaded: (List<Serie>) -> Unit) {
 }
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TelaPrincipal(
     modifier: Modifier = Modifier,

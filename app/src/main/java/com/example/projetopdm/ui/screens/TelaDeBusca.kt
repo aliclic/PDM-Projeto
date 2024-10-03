@@ -1,6 +1,8 @@
 package com.example.projetopdm.ui.screens
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +50,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TelaDeBusca(modifier: Modifier = Modifier) {
     var searchQuery by remember { mutableStateOf("") }

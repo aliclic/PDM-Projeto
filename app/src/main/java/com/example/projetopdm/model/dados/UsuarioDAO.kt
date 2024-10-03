@@ -175,6 +175,77 @@ class UsuarioDAO{
             }
     }
 
+    fun getMoviesForList(userId: String, listId: String, onComplete: (List<Movie>) -> Unit) {
+        // Primeiro, busque a lista de filmes pelo ID do usuário
+        buscarListaFilmesPorId(userId, listId) { listaFilmes ->
+            if (listaFilmes != null) {
+                Log.d("Firestore", "Lista encontrada! ID: ${listaFilmes.id}, Título: ${listaFilmes.titulo}")
+
+                // Suponha que você tenha um banco de dados ou coleção para os detalhes de cada filme
+                val movieCollectionRef = db.collection("movies")
+
+                // Agora, busque os detalhes de cada filme pela lista de IDs
+                val movieDetailsList = mutableListOf<Movie>()
+                val remainingMovies = listaFilmes.filmes.size
+
+                listaFilmes.filmes.forEach { movieId ->
+                    movieCollectionRef.document(movieId.toString()).get()
+                        .addOnSuccessListener { documentSnapshot ->
+                            val movie = documentSnapshot.toObject(Movie::class.java)
+                            movie?.let { movieDetailsList.add(it) }
+
+                            // Quando todas as buscas forem completadas, chamamos o callback
+                            if (movieDetailsList.size == remainingMovies) {
+                                onComplete(movieDetailsList)
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.e("Firestore", "Erro ao buscar detalhes do filme $movieId", exception)
+                        }
+                }
+            } else {
+                Log.e("Firestore", "Lista de filmes não encontrada para o id $listId")
+                onComplete(emptyList()) // Retorna uma lista vazia caso não encontre
+            }
+        }
+    }
+
+
+    fun removerListaFilmes(userId: String, listaId: String, onComplete: (Boolean) -> Unit) {
+        val userRef = db.collection("usuarios").document(userId)
+
+        userRef.get()
+            .addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot.exists()) {
+                    val usuario = documentSnapshot.toObject(Usuario::class.java)
+                    val listasAtualizadas = usuario?.filmes?.filterNot { it.id == listaId }
+
+                    if (listasAtualizadas != null) {
+                        // Atualiza o campo 'filmes' no documento do usuário com a lista removida
+                        userRef.update("filmes", listasAtualizadas)
+                            .addOnSuccessListener {
+                                Log.d("Firestore", "Lista removida com sucesso.")
+                                onComplete(true)
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("Firestore", "Erro ao remover a lista", e)
+                                onComplete(false)
+                            }
+                    } else {
+                        Log.e("Firestore", "Lista não encontrada")
+                        onComplete(false) // Lista não encontrada
+                    }
+                } else {
+                    Log.e("Firestore", "Usuário não encontrado")
+                    onComplete(false) // Usuário não encontrado
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Erro ao obter o usuário", e)
+                onComplete(false)
+            }
+    }
+    //ver se retorna tudo ou só o nome.caio
     fun getUserMovieLists(userId: String, onComplete: (List<ListaFilmes>) -> Unit) {
         collectionRef.document(userId).get()
             .addOnSuccessListener { document ->
