@@ -1,6 +1,7 @@
 package com.example.projetopdm.ui.modals
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,11 +27,23 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
+import com.example.projetopdm.AppConstants
 import com.example.projetopdm.model.Serie
 import com.example.projetopdm.model.dados.ListaFilmes
 import com.example.projetopdm.model.dados.UsuarioDAO
+import com.example.projetopdm.util.formatDateToBrazilian
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -65,7 +78,62 @@ fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(text = serie.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 8.dp))
-                    Text(text = serie.overview)
+
+                    serie.poster_path?.let { imageUrl ->
+                        val posterUrl = AppConstants.TMDB_IMAGE_BASE_URL_ORIGINAL + imageUrl
+                        // Exibir imagem do item
+                        AsyncImage(
+                            model = posterUrl,
+                            contentDescription = "Imagem de ${serie.name}",
+                            modifier = Modifier
+                                .fillMaxWidth() // Preencher a largura do modal
+                                .height(200.dp) // Altura fixa para a imagem
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.Transparent),
+                        )
+                    }
+
+                    Text(
+                        text = serie.overview,
+                        style = TextStyle(fontSize = 16.sp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append("Data de Exibição: ")
+                            }
+                            append(formatDateToBrazilian(serie.first_air_date))
+                        },
+                        style = TextStyle(fontSize = 16.sp)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append("Média de Voto: ")
+                            }
+                            append("${serie.vote_average ?: "N/A"} (${serie.vote_count ?: 0} votos)")
+                        },
+                        style = TextStyle(fontSize = 16.sp)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append("Linguagem Original: ")
+                            }
+                            append(serie.original_language ?: "N/A")
+                        },
+                        style = TextStyle(fontSize = 16.sp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Spacer(modifier = Modifier.height(16.dp))
 
