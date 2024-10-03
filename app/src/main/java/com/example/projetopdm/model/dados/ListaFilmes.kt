@@ -4,7 +4,7 @@ import com.google.firebase.firestore.DocumentId
 
 data class ListaFilmes(
 
-    @DocumentId
+
     val id: String = "",
     val titulo: String? = "Lista",
     val filmes: List<Int> = emptyList()

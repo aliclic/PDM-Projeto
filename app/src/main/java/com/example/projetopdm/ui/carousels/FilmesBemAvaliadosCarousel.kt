@@ -1,5 +1,6 @@
 package com.example.projetopdm.ui.carousels
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import com.example.projetopdm.ui.components.MovieItem
 import com.example.projetopdm.ui.modals.MovieDetailsModal
 import com.example.projetopdm.ui.screens.loadTopRatedMovies
 
+@SuppressLint("NewApi")
 @Composable
 fun FilmesBemAvaliadosCarousel(navController: NavController) {
     var movies by remember { mutableStateOf(listOf<Movie>()) }
@@ -46,7 +48,6 @@ fun FilmesBemAvaliadosCarousel(navController: NavController) {
                 isModalVisible = true
             })
         }
-
         // Detecta quando chega ao final da lista e carrega mais
         item {
             if (isLoading) {

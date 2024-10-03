@@ -55,8 +55,12 @@ fun TelaFavoritos(
 
     // Carregar as listas e os filmes favoritos do usuário
     LaunchedEffect(userId) {
+        isLoading = true  // Inicia o carregamento
         usuarioDAO.getUserMovieLists(userId) { listas ->
             listaFilmes = listas
+            listas.forEach { lista ->
+                Log.d("Detalhe Lista", "Lista: ${lista.titulo}, Filmes: ${lista.filmes}")
+            }
             launch {
                 filmesDetalhados = withContext(Dispatchers.IO) {
                     listas.map { lista ->
@@ -73,7 +77,9 @@ fun TelaFavoritos(
 
                         (lista.titulo ?: "Título Desconhecido") to movieDetails
                     }.toMap()
+
                 }
+                isLoading = false  // Finaliza o carregamento
             }
         }
     }
@@ -143,6 +149,7 @@ fun TelaFavoritos(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    Log.d("Listas UI", listaFilmes.toString())  // Verifique se a lista é passada corretamente aqui
                     items(listaFilmes) { lista ->
                         Column {
                             // Título da lista de filmes
@@ -206,6 +213,7 @@ fun TelaFavoritos(
                                 usuarioDAO.addNewList(userId, newListName) { success ->
                                     if (success) {
                                         refreshFavorites()
+
                                         newListName = ""
                                         showAddListDialog = false
                                     }

@@ -1,7 +1,5 @@
 package com.example.projetopdm.model.dados
 
-import com.google.firebase.firestore.DocumentId
-
 data class Usuario(
 
     val id: String = "",

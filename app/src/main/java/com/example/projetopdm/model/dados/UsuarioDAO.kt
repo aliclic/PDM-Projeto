@@ -1,6 +1,5 @@
 package com.example.projetopdm.model.dados
 
-import android.net.Uri
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.util.Log
 import androidx.navigation.NavController
@@ -15,57 +14,11 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
-import com.google.firebase.storage.FirebaseStorage
-import java.util.UUID
 
 class UsuarioDAO{
     val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val collectionRef = db.collection("usuarios")
-    private val storage = FirebaseStorage.getInstance() // Adiciona o Firebase Storage
-
-    fun uploadUserProfileImage(
-        userId: String,
-        imageUri: Uri,
-        onSuccess: (String) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        // Cria uma referência ao Firebase Storage para a pasta "profileImages"
-        val storageRef = storage.reference.child("profileImages/$userId/${UUID.randomUUID()}.jpg")
-
-        // Faz o upload da imagem para o Storage
-        storageRef.putFile(imageUri)
-            .addOnSuccessListener {
-                // Obtém a URL de download após o upload ser concluído
-                storageRef.downloadUrl.addOnSuccessListener { uri ->
-                    // Atualiza a URL no documento do usuário no Firestore
-                    collectionRef.document(userId)
-                        .update("profileImageUrl", uri.toString())
-                        .addOnSuccessListener {
-                            println("Imagem de perfil atualizada com sucesso no Firestore.")
-                            onSuccess(uri.toString()) // Retorna a URL da imagem
-                        }
-                        .addOnFailureListener { e ->
-                            println("Erro ao atualizar a URL no Firestore: ${e.message}")
-                            onError("Erro ao atualizar a URL no Firestore: ${e.message}")
-                        }
-                }
-            }
-            .addOnFailureListener { exception ->
-                println("Erro ao fazer upload da imagem: ${exception.message}")
-                onError("Erro ao fazer upload da imagem: ${exception.message}")
-            }
-    }
-
-    fun atualizarImagemPerfil(userId: String, imageUri: String, onComplete: (Boolean) -> Unit) {
-        // Exemplo de atualização da imagem de perfil no Firebase Firestore
-        val db = FirebaseFirestore.getInstance()
-        val userRef = db.collection("usuarios").document(userId)
-
-        userRef.update("profilePictureUrl", imageUri)
-            .addOnSuccessListener { onComplete(true) }
-            .addOnFailureListener { onComplete(false) }
-    }
 
     fun signIn(email: String, senha: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
         FirebaseAuth.getInstance().signInWithEmailAndPassword(email, senha)
@@ -253,61 +206,113 @@ class UsuarioDAO{
 
 
     fun addNewList(userId: String, listName: String, onComplete: (Boolean) -> Unit) {
-        val newList = ListaFilmes(titulo = listName)
+        // Gerar um novo ID para a lista de filmes
+        val newListId = collectionRef.document().id
 
-        collectionRef.document(userId).update(
+        // Criar uma nova instância de ListaFilmes
+        val newList = ListaFilmes(id = newListId, titulo = listName)
+
+        // Referência ao documento do usuário
+        val userRef = collectionRef.document(userId)
+
+        // Adicionar a nova lista de filmes ao array "filmes" do usuário
+        userRef.update(
             "filmes", FieldValue.arrayUnion(newList)
         ).addOnSuccessListener {
+            // Log para depuração
+            Log.d("Firestore", "Lista de Filmes: ${newList.titulo}, ID: ${newList.id}")
             Log.d("Firestore", "Nova lista adicionada com sucesso")
             onComplete(true)
         }.addOnFailureListener { exception ->
+            // Log de erro
             Log.e("Firestore", "Erro ao adicionar nova lista", exception)
             onComplete(false)
         }
     }
 
-    fun adicionarFilmeNaLista(userId: String, listaId: String, filmeId: Int, onComplete: (Boolean) -> Unit) {
+
+
+    fun buscarListaFilmesPorId(userId: String, listaId: String, onComplete: (ListaFilmes?) -> Unit) {
         val userRef = db.collection("usuarios").document(userId)
 
         userRef.get()
             .addOnSuccessListener { documentSnapshot ->
                 if (documentSnapshot.exists()) {
                     val usuario = documentSnapshot.toObject(Usuario::class.java)
+
+                    // Encontra a lista de filmes pelo ID
                     val listaFilmes = usuario?.filmes?.find { it.id == listaId }
 
-                    listaFilmes?.let { lista ->
-                        // Adiciona o ID do filme à lista
-                        val filmesAtualizados = lista.filmes.toMutableList().apply {
-                            add(filmeId)
-                        }
-
-                        // Atualiza a lista no Firestore
-                        val listaAtualizada = lista.copy(filmes = filmesAtualizados)
-                        val listasAtualizadas = usuario.filmes.map {
-                            if (it.id == listaId) listaAtualizada else it
-                        }
-
-                        // Atualiza o documento do usuário
-                        userRef.update("filmes", listasAtualizadas)
-                            .addOnSuccessListener {
-                                onComplete(true)
-                            }
-                            .addOnFailureListener {
-                                onComplete(false)
-                            }
-                    } ?: run {
-                        onComplete(false) // Lista não encontrada
+                    if (listaFilmes != null) {
+                        onComplete(listaFilmes) // Retorna a lista de filmes encontrada
+                    } else {
+                        Log.e("Firestore", "Lista de filmes com o id $listaId não encontrada")
+                        onComplete(null) // Lista não encontrada
                     }
                 } else {
-                    onComplete(false) // Usuário não encontrado
+                    Log.e("Firestore", "Usuário com o id $userId não encontrado")
+                    onComplete(null) // Usuário não encontrado
                 }
             }
-            .addOnFailureListener {
-                onComplete(false)
+            .addOnFailureListener { exception ->
+                Log.e("Firestore", "Erro ao buscar documento do usuário", exception)
+                onComplete(null) // Erro na busca
             }
     }
 
 
+    fun adicionarFilmeNaLista(userId: String, listaId: String, filmeId: Int, onComplete: (Boolean) -> Unit) {
+        // Primeiro, busca a lista de filmes pelo ID
+        buscarListaFilmesPorId(userId, listaId) { listaFilmes ->
+            if (listaFilmes != null) {
+                Log.d("Firestore", "Lista encontrada! ID: ${listaFilmes.id}, Título: ${listaFilmes.titulo}")
+                val userRef = db.collection("usuarios").document(userId)
+
+                userRef.get()
+                    .addOnSuccessListener { documentSnapshot ->
+                        if (documentSnapshot.exists()) {
+                            val usuario = documentSnapshot.toObject(Usuario::class.java)
+
+                            // Adiciona o ID do filme à lista de forma correta, sem duplicar
+                            val filmesAtualizados = listaFilmes.filmes.toMutableList().apply {
+                                if (!contains(filmeId)) {
+                                    add(filmeId) // Adiciona o filme se ele não estiver presente
+                                }
+                            }
+
+                            // Cria uma cópia da lista de filmes com o ID correto e os filmes atualizados
+                            val listaAtualizada = listaFilmes.copy(filmes = filmesAtualizados)
+
+                            // Cria uma lista modificada, substituindo apenas a lista com o id correspondente
+                            val listasAtualizadas = usuario?.filmes?.map {
+                                if (it.id == listaId) listaAtualizada else it
+                            }
+
+                            // Faz o update no Firestore, atualizando somente a lista correta
+                            userRef.update("filmes", listasAtualizadas)
+                                .addOnSuccessListener {
+                                    Log.d("Firestore", "Filme adicionado à lista com sucesso")
+                                    onComplete(true)
+                                }
+                                .addOnFailureListener { exception ->
+                                    Log.e("Firestore", "Erro ao atualizar a lista de filmes", exception)
+                                    onComplete(false)
+                                }
+                        } else {
+                            Log.e("Firestore", "Usuário com o id $userId não encontrado")
+                            onComplete(false) // Usuário não encontrado
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.e("Firestore", "Erro ao buscar documento do usuário", exception)
+                        onComplete(false)
+                    }
+            } else {
+                Log.e("Firestore", "Lista de filmes com o id $listaId não encontrada")
+                onComplete(false) // Lista não encontrada
+            }
+        }
+    }
 
 
     fun logout(onComplete: (Boolean) -> Unit) {
