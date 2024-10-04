@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.projetopdm.AppConstants
 import com.example.projetopdm.model.Movie
 import com.example.projetopdm.model.MediaItem
@@ -46,21 +47,24 @@ import com.example.projetopdm.ui.components.MovieItem
 import com.example.projetopdm.ui.components.SerieItem
 import com.example.projetopdm.ui.modals.MovieDetailsModal
 import com.example.projetopdm.ui.modals.SerieDetailsModal
+import com.example.projetopdm.ui.viewmodels.BuscaViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TelaDeBusca(modifier: Modifier = Modifier) {
-    var searchQuery by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var searchResults by remember { mutableStateOf<List<MediaItem>>(emptyList()) } // Lista de resultados como MediaItem
-    var currentPage by remember { mutableStateOf(1) }  // Página atual
-    var isLoadingMore by remember { mutableStateOf(false) } // Indica se mais itens estão sendo carregados
+fun TelaDeBusca(
+    modifier: Modifier = Modifier,
+    buscaViewModel: BuscaViewModel = viewModel()
+) {
+    val searchQuery by buscaViewModel.searchQuery
+    val isLoading by buscaViewModel.isLoading
+    val searchResults by buscaViewModel.searchResults
+    val isLoadingMore by buscaViewModel.isLoadingMore
+
     var selectedItem: MediaItem? by remember { mutableStateOf(null) }
     var isModalVisible by remember { mutableStateOf(false) }
-    val debounceDelay = 500L
 
     Column(
         modifier = modifier
@@ -70,16 +74,7 @@ fun TelaDeBusca(modifier: Modifier = Modifier) {
         // Campo de busca
         BasicTextField(
             value = searchQuery,
-            onValueChange = { query ->
-                searchQuery = query
-                currentPage = 1 // Reinicia a página quando a busca muda
-                isLoading = true
-
-                buscarFilmesESeriesComDebounce(query, debounceDelay, currentPage) { resultados ->
-                    searchResults = resultados
-                    isLoading = false
-                }
-            },
+            onValueChange = { query -> buscaViewModel.onSearchQueryChange(query) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
@@ -146,17 +141,6 @@ fun TelaDeBusca(modifier: Modifier = Modifier) {
                     }
                 }
             }
-
-            // Detecta quando o usuário chega ao final da lista para carregar mais itens
-            val lastVisibleIndex = searchResults.size - 1
-            if (lastVisibleIndex >= 0 && !isLoadingMore && lastVisibleIndex == searchResults.size - 1) {
-                currentPage += 1
-                isLoadingMore = true
-                buscarFilmesESeries(searchQuery, currentPage) { novosResultados ->
-                    searchResults = searchResults + novosResultados
-                    isLoadingMore = false
-                }
-            }
         }
     }
 
@@ -166,57 +150,15 @@ fun TelaDeBusca(modifier: Modifier = Modifier) {
             when (item) {
                 is Movie -> {
                     MovieDetailsModal(item) {
-                        isModalVisible = false // Fecha o modal ao clicar no botão de fechar
+                        isModalVisible = false
                     }
                 }
                 is Serie -> {
                     SerieDetailsModal(item) {
-                        isModalVisible = false // Fecha o modal ao clicar no botão de fechar
+                        isModalVisible = false
                     }
                 }
             }
         }
     }
-}
-
-private fun buscarFilmesESeriesComDebounce(query: String, delayMs: Long, page: Int, onResultsLoaded: (List<MediaItem>) -> Unit) {
-    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-        buscarFilmesESeries(query, page, onResultsLoaded)
-    }, delayMs)
-}
-
-private fun buscarFilmesESeries(query: String, page: Int, onResultsLoaded: (List<MediaItem>) -> Unit) {
-    val filmesCall = RetrofitInstance.api.searchMovies(AppConstants.TMDB_API_KEY, query, "pt-BR", page)
-    val seriesCall = RetrofitInstance.api.searchTVShows(AppConstants.TMDB_API_KEY, query, "pt-BR", page)
-
-    val mediaItems = mutableListOf<MediaItem>()
-
-    // Chamada para buscar filmes
-    filmesCall.enqueue(object : Callback<TmdbMovieResponse> {
-        override fun onResponse(call: Call<TmdbMovieResponse>, response: Response<TmdbMovieResponse>) {
-            response.body()?.let {
-                mediaItems.addAll(it.results) // Adiciona filmes
-            }
-
-            // Após buscar os filmes, buscar as séries
-            seriesCall.enqueue(object : Callback<TmdbSerieResponse> {
-                override fun onResponse(call: Call<TmdbSerieResponse>, response: Response<TmdbSerieResponse>) {
-                    response.body()?.let {
-                        mediaItems.addAll(it.results) // Adiciona séries
-                    }
-                    onResultsLoaded(mediaItems)
-                }
-
-                override fun onFailure(call: Call<TmdbSerieResponse>, t: Throwable) {
-                    Log.e("API_ERROR", "Erro ao buscar séries", t)
-                    onResultsLoaded(mediaItems)
-                }
-            })
-        }
-
-        override fun onFailure(call: Call<TmdbMovieResponse>, t: Throwable) {
-            Log.e("API_ERROR", "Erro ao buscar filmes", t)
-            onResultsLoaded(emptyList())
-        }
-    })
 }
