@@ -80,4 +80,9 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.coil.compose)
 
+    implementation ("com.google.dagger:hilt-android:2.44")
+    implementation("io.insert-koin:koin-android:4.0.0")
+    implementation("io.insert-koin:koin-androidx-compose:3.4.0")
+    implementation ("io.insert-koin:koin-core:3.4.0")
+
 }
