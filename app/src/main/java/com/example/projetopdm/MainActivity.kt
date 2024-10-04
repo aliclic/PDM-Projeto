@@ -52,7 +52,6 @@ import com.example.projetopdm.ui.screens.TelaPerfil
 import com.example.projetopdm.ui.screens.TelaPrincipal
 import com.example.projetopdm.ui.screens.TelaFavoritos
 import com.example.projetopdm.ui.theme.ProjetoPDMTheme
-import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
