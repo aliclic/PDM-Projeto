@@ -77,7 +77,11 @@ fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
                         .padding(16.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text(text = serie.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(
+                        text = serie.name,
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
 
                     serie.poster_path?.let { imageUrl ->
                         val posterUrl = AppConstants.TMDB_IMAGE_BASE_URL_ORIGINAL + imageUrl
@@ -92,6 +96,8 @@ fun SerieDetailsModal(serie: Serie?, onDismiss: () -> Unit) {
                                 .background(Color.Transparent),
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
                         text = serie.overview,
