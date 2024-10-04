@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,52 +40,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-private fun <T> loadMovies(
-    call: Call<T>,
-    onMoviesLoaded: (List<Movie>) -> Unit
-) {
-    call.enqueue(object : Callback<T> {
-        override fun onResponse(call: Call<T>, response: Response<T>) {
-            response.body()?.let {
-                // Aqui você pode processar a resposta para extrair a lista de filmes
-                // Supondo que a resposta contenha um campo `results` que é uma lista de filmes
-                @Suppress("UNCHECKED_CAST")
-                val movieList = (it as? TmdbMovieResponse)?.results ?: emptyList()
-                onMoviesLoaded(movieList)
-            }
-        }
-
-        override fun onFailure(call: Call<T>, t: Throwable) {
-            Log.e("API_ERROR", "Error fetching movies", t)
-            onMoviesLoaded(emptyList())  // Retorna uma lista vazia se falhar
-        }
-    })
-}
-
-private fun <T> loadSeries(
-    call: Call<T>,
-    onSeriesLoaded: (List<Serie>) -> Unit
-) {
-    call.enqueue(object : Callback<T> {
-        override fun onResponse(call: Call<T>, response: Response<T>) {
-            response.body()?.let {
-                // Aqui você pode processar a resposta para extrair a lista de séries
-                // Supondo que a resposta contenha um campo `results` que é uma lista de séries
-                @Suppress("UNCHECKED_CAST")
-                val seriesList = (it as? TmdbSerieResponse)?.results ?: emptyList()
-                onSeriesLoaded(seriesList)
-            }
-        }
-
-        override fun onFailure(call: Call<T>, t: Throwable) {
-            Log.e("API_ERROR", "Error fetching series", t)
-            onSeriesLoaded(emptyList())  // Retorna uma lista vazia se falhar
-        }
-    })
-}
-
-
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TelaFavoritos(
@@ -96,7 +51,7 @@ fun TelaFavoritos(
     var showAddListDialog by remember { mutableStateOf(false) }
     var newListName by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
-    var filmesPorLista = mutableMapOf<String, List<Movie>>()
+    var filmesPorLista by remember { mutableStateOf<Map<String, List<Movie>>>(emptyMap()) }
 
     val usuarioDAO = UsuarioDAO()
 
@@ -106,9 +61,21 @@ fun TelaFavoritos(
         usuarioDAO.getUserMovieLists(userId) { listas ->
             listaFilmes = listas
 
+            // Carregar detalhes dos filmes de cada lista
             listas.forEach { lista ->
-                usuarioDAO.getMoviesForList(userId, lista.id) { filmes ->
-                    filmesPorLista = (filmesPorLista + (lista.id to filmes)) as MutableMap<String, List<Movie>>
+                val filmesIds = lista.filmes  // IDs dos filmes armazenados na lista
+                val filmesDetalhes = mutableListOf<Movie>()
+
+                // Para cada filme, fazer a requisição para obter seus detalhes
+                filmesIds.forEach { movieId ->
+                    usuarioDAO.getMovieById(userId, movieId) { filme -> // Passa userId e movieId
+                        if (filme != null) {
+                            filmesDetalhes.add(filme)
+                        }
+
+                        // Atualiza o estado com a lista de filmes dessa lista específica
+                        filmesPorLista = filmesPorLista + (lista.id to filmesDetalhes)
+                    }
                 }
             }
 
@@ -126,14 +93,25 @@ fun TelaFavoritos(
     fun removerLista(listaId: String) {
         usuarioDAO.removerListaFilmes(userId, listaId) { success ->
             if (success) {
-                refreshFavorites()  // Atualiza as listas após remoção
+                // Atualiza a interface após a remoção
+                listaFilmes = listaFilmes.filter { it.id != listaId }
+                filmesPorLista = filmesPorLista - listaId
+            }
+        }
+    }
+
+    // Função para adicionar um filme à lista
+    fun adicionarFilme(listaId: String, filmeId: Int) {
+        usuarioDAO.adicionarFilmeNaLista(userId, listaId, filmeId) { success ->
+            if (success) {
+                // Atualiza a interface após adicionar o filme
+                refreshFavorites()
             }
         }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column {
-            // Título da tela
             Text(
                 text = "Minhas Listas Favoritas",
                 style = MaterialTheme.typography.headlineMedium,
@@ -152,30 +130,78 @@ fun TelaFavoritos(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(listaFilmes) { lista ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp)
                         ) {
-                            // Título da lista
-                            Text(
-                                text = lista.titulo ?: "Título Desconhecido",
-                                style = MaterialTheme.typography.titleLarge,
-                                modifier = Modifier.weight(1f)  // Ocupa o espaço disponível
-                            )
-
-                            // Ícone de deletar ao lado do título
-                            Icon(
-                                imageVector = Icons.Filled.Delete,  // Ícone de lixeira
-                                contentDescription = "Remover lista",
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        removerLista(lista.id)  // Chama a função de remoção
-                                    },
-                                tint = Color.Red
-                            )
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                            ) {
+                                // Título da lista
+                                Text(
+                                    text = lista.titulo ?: "Título Desconhecido",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                // Ícone de deletar ao lado do título
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "Remover lista",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable {
+                                            removerLista(lista.id)
+                                        },
+                                    tint = Color.Red
+                                )
+                            }
+
+                            // Verifica se há filmes para essa lista
+                            val filmes = filmesPorLista[lista.id]
+
+                            if (!filmes.isNullOrEmpty()) {
+                                // Exibe os filmes em um LazyRow (um carrossel horizontal)
+                                LazyRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(filmes) { filme ->
+                                        Box(
+                                            modifier = Modifier
+                                                .size(150.dp)  // Define o tamanho do card do filme
+                                                .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    // Adiciona um filme à lista ao clicar
+                                                    adicionarFilme(lista.id, filme.id) // Altere para filme.id de acordo com a estrutura do objeto
+                                                }
+                                                .padding(8.dp)
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                // Exibe o título do filme
+                                                Text(
+                                                    text = filme.title ?: "Sem título",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    modifier = Modifier.padding(8.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    text = "Nenhum filme nessa lista.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -238,3 +264,6 @@ fun TelaFavoritos(
         }
     }
 }
+
+
+

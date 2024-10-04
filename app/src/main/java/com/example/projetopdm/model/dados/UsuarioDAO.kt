@@ -1,19 +1,19 @@
 package com.example.projetopdm.model.dados
 
-import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.util.Log
-import androidx.navigation.NavController
+import com.example.projetopdm.AppConstants
 import com.example.projetopdm.model.Movie
-import com.google.android.gms.tasks.Task
-import com.google.android.gms.tasks.Tasks
+import com.example.projetopdm.network.RetrofitInstance
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class UsuarioDAO{
     val db = FirebaseFirestore.getInstance()
@@ -355,8 +355,8 @@ class UsuarioDAO{
                             val listaAtualizada = listaFilmes.copy(filmes = filmesAtualizados)
 
                             // Cria uma lista modificada, substituindo apenas a lista com o id correspondente
-                            val listasAtualizadas = usuario?.filmes?.map {
-                                if (it.id == listaId) listaAtualizada else it
+                            val listasAtualizadas = usuario?.filmes?.map { lista ->
+                                if (lista.id == listaId) listaAtualizada else lista
                             }
 
                             // Faz o update no Firestore, atualizando somente a lista correta
@@ -384,6 +384,57 @@ class UsuarioDAO{
             }
         }
     }
+
+    fun getMovieById(userId: String, movieId: Int, callback: (Movie?) -> Unit) {
+        // Referência ao documento do usuário
+        val userRef = db.collection("usuarios").document(userId)
+
+        userRef.get().addOnSuccessListener { document ->
+            if (document != null) {
+                // Verifica se o documento contém a lista de filmes
+                val listasFilmes = document.get("filmes") as? List<Map<String, Any>> ?: run {
+                    Log.e("Firestore", "Nenhuma lista de filmes encontrada para o usuário $userId")
+                    callback(null)
+                    return@addOnSuccessListener
+                }
+
+                // Percorre as listas de filmes
+                for (lista in listasFilmes) {
+                    val filmesIds = lista["filmes"] as? List<Int> ?: continue
+                    // Verifica se o ID do filme está na lista de IDs
+                    if (filmesIds.contains(movieId)) {
+                        // Chama a função suspensa dentro de uma coroutine
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val movie = getMovieDetails(movieId)
+                            callback(movie)  // Retorna o filme encontrado
+                        }
+                        return@addOnSuccessListener // Se encontrou, não precisa continuar a busca
+                    }
+                }
+
+                // Se nenhum filme foi encontrado nas listas
+                Log.e("Firestore", "Filme com o ID $movieId não encontrado nas listas do usuário $userId.")
+                callback(null)
+            } else {
+                Log.e("Firestore", "Usuário com ID $userId não encontrado.")
+                callback(null)
+            }
+        }.addOnFailureListener { exception ->
+            Log.e("Firestore", "Erro ao buscar usuário: ", exception)
+            callback(null)
+        }
+    }
+
+    suspend fun getMovieDetails(movieId: Int): Movie? {
+        return try {
+            // Faz a chamada para obter os detalhes do filme
+            RetrofitInstance.api.getMovieById(movieId, AppConstants.TMDB_API_KEY)
+        } catch (e: Exception) {
+            Log.e("API", "Erro ao obter detalhes do filme: ${e.message}")
+            null
+        }
+    }
+
 
 
     fun logout(onComplete: (Boolean) -> Unit) {
